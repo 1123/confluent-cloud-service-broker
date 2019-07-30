@@ -1,0 +1,1 @@
+curl -X PUT localhost:8080/v2/service_instances/38c919ef-43d6-4b3e-ba31-988b753a9373 -d '{ "service_id": "confluent-kafka", "plan_id": "fooBar", "parameters": { "topic_name" : "xyz" } }' -H "X-Broker-API-Version: 2.12" -H "Content-Type: application/json"
