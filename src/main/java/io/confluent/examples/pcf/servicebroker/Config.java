@@ -14,8 +14,6 @@ import java.util.Properties;
 @Configuration
 public class Config {
 
-    @Value("${kafka.sasl.jaas.config}")
-    private String saslJaasConfig;
     @Value("${kafka.bootstrap.servers}")
     private String bootstrapServers;
 
@@ -23,12 +21,8 @@ public class Config {
     public AdminClient adminClient() {
         Properties properties = new Properties();
         properties.put("bootstrap.servers", bootstrapServers);
-        properties.put("ssl.endpoint.identification.algorithm", "https");
-        properties.put("sasl.mechanism", "PLAIN");
         properties.put("retry.backoff.ms", "500");
         properties.put("request.timeout.ms", "20000");
-        properties.put("sasl.jaas.config", saslJaasConfig);
-        properties.put("security.protocol", "SASL_SSL");
         return AdminClient.create(properties);
     }
 
