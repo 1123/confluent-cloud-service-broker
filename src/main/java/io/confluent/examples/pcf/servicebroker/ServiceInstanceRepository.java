@@ -44,4 +44,21 @@ public class ServiceInstanceRepository {
         return serviceInstanceCache.getInstances().get(uuid);
     }
 
+    /**
+     * Delete a service instance. This is done by publishing a tombstone message.
+     * @param uuid: the id of the service instance to be deleted.
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
+
+    void delete(UUID uuid) throws ExecutionException, InterruptedException {
+        Future<RecordMetadata> result = kafkaProducer.send(
+                new ProducerRecord<>(
+                        serviceInstanceStoreTopic,
+                        uuid.toString(),
+                        null
+                )
+        );
+        log.info(result.get().toString());
+    }
 }

@@ -22,6 +22,8 @@ import java.util.UUID;
 @Configuration
 public class Config {
 
+    public static String STANDARD_SERVICE_PLAN = "standard";
+
     @Value("${kafka.bootstrap.servers}")
     private String bootstrapServers;
 
@@ -66,17 +68,22 @@ public class Config {
     }
 
     @Bean
-    public Catalog catalog() {
+    public Catalog catalog(
+            @Value("${service.uuid}") String serviceUUID,
+            @Value("${service.name}") String serviceName,
+            @Value("${service.plan.standard.uuid}") String servicePlanUUID,
+            @Value("${service.plan.standard.name}") String standardServicePlan
+    ) {
         Plan plan = Plan.builder()
-                .id("standard")
-                .name("standard")
+                .id(servicePlanUUID)
+                .name(STANDARD_SERVICE_PLAN)
                 .description("Provision a topic with 3 partitions and replication factor 3.")
                 .free(true)
                 .build();
 
         ServiceDefinition serviceDefinition = ServiceDefinition.builder()
-                .id("confluent-kafka")
-                .name("Apache Kafka Service Broker for Confluent Cloud")
+                .id(serviceUUID)
+                .name(serviceName)
                 .description("A service for provisioning Kafka Topics on Confluent Cloud")
                 .bindable(true)
                 .tags("example", "tags")

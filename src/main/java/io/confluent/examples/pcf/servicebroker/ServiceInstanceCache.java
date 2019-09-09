@@ -3,6 +3,7 @@ package io.confluent.examples.pcf.servicebroker;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,22 +39,25 @@ public class ServiceInstanceCache implements CommandLineRunner {
         kafkaConsumer.subscribe(Collections.singletonList(serviceInstanceStoreTopic));
         taskExecutor.execute(() -> {
             while (true) {
-                log.info("Caching service instances ");
+                log.info("Caching service instances.");
                 ConsumerRecords<String, String> records = kafkaConsumer.poll(Duration.ofSeconds(5));
-                records.forEach(
-                        record -> {
-                            try {
-                                instances.put(
-                                        UUID.fromString(record.key()),
-                                        objectMapper.readValue(record.value(), TopicServiceInstance.class)
-                                );
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                );
+                log.info("Handling {} records", records.count());
+                records.forEach(this::handleRecord);
             }
         });
+    }
+
+    private void handleRecord(ConsumerRecord<String, String> record) {
+        UUID uuid = UUID.fromString(record.key());
+        if (record.value() == null) { // tombstone message
+            instances.remove(uuid);
+            return;
+        }
+        try { // no tombstone message
+            instances.put(uuid, objectMapper.readValue(record.value(), TopicServiceInstance.class));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }

@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @SpringBootTest
 @Slf4j
@@ -35,5 +36,25 @@ class ServiceInstanceRepositoryTest {
         assertNotNull(stored);
     }
 
+    @Test
+    public void testSaveAndDelete() throws InterruptedException, ExecutionException, JsonProcessingException {
+        UUID uuid = UUID.randomUUID();
+        TopicServiceInstance topicServiceInstance = TopicServiceInstance.builder()
+                .topicName(UUID.randomUUID().toString())
+                .uuid(uuid)
+                .created(new Date())
+                .plan("default")
+                .build();
+
+        serviceInstanceRepository.save(topicServiceInstance);
+        Thread.sleep(50);
+        assertNotNull(serviceInstanceRepository.get(uuid));
+        serviceInstanceRepository.delete(uuid);
+        Thread.sleep(50);
+        assertNull(serviceInstanceRepository.get(uuid));
+        serviceInstanceRepository.delete(uuid);
+    }
+
 }
+
 

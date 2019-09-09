@@ -17,5 +17,6 @@ public class TopicServiceInstance {
     UUID uuid;
     String topicName;
     Date created;
+    String plan;
 
 }
