@@ -1,22 +1,21 @@
 package io.confluent.examples.pcf.servicebroker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.kafka.common.internals.Topic;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.servicebroker.model.instance.*;
-import org.springframework.cloud.servicebroker.service.ServiceInstanceBindingService;
 import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 @Service
+@Slf4j
 public class ConfluentPlatformServiceInstanceService implements ServiceInstanceService {
 
     @Autowired
@@ -30,6 +29,7 @@ public class ConfluentPlatformServiceInstanceService implements ServiceInstanceS
 
     @Override
     public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest createServiceInstanceRequest) {
+        log.info("Creating service instance.");
         String topic = (String) createServiceInstanceRequest.getParameters().get("topic_name");
         if (topic == null || topic.isEmpty()) {
             throw new RuntimeException("topic name is missing.");
@@ -37,10 +37,15 @@ public class ConfluentPlatformServiceInstanceService implements ServiceInstanceS
         try {
             topicCreator.create(topic, 3, replicationFactor);
             serviceInstanceRepository.save(
-                    TopicServiceInstance.builder().created(new Date()).topicName(topic).uuid(UUID.randomUUID()).build()
+                    TopicServiceInstance.builder()
+                            .created(new Date())
+                            .topicName(topic)
+                            .uuid(UUID.fromString(createServiceInstanceRequest.getServiceInstanceId()))
+                            .planId(UUID.fromString(createServiceInstanceRequest.getPlanId()))
+                            .build()
             );
         } catch (ExecutionException | InterruptedException | JsonProcessingException e) {
-            e.printStackTrace();
+            log.warn(e.getMessage());
             throw new RuntimeException(e);
         }
         return Mono.just(
@@ -59,6 +64,12 @@ public class ConfluentPlatformServiceInstanceService implements ServiceInstanceS
 
     @Override
     public Mono<DeleteServiceInstanceResponse> deleteServiceInstance(DeleteServiceInstanceRequest deleteServiceInstanceRequest) {
-        return null;
+        try {
+            serviceInstanceRepository.delete(UUID.fromString(deleteServiceInstanceRequest.getServiceInstanceId()));
+            return Mono.just(DeleteServiceInstanceResponse.builder().build());
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+            return Mono.empty();
+        }
     }
 }

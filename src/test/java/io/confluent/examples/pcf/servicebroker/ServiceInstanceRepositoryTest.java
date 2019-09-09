@@ -2,8 +2,10 @@ package io.confluent.examples.pcf.servicebroker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.BeforeClass;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Date;
@@ -17,8 +19,16 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 @Slf4j
 class ServiceInstanceRepositoryTest {
 
+    @Value("${service.plan.standard.uuid}")
+    private UUID servicePlanId;
+
     @Autowired
     private ServiceInstanceRepository serviceInstanceRepository;
+
+    @BeforeClass
+    static void before() throws ExecutionException, InterruptedException {
+        TestUtils.recreateServiceInstancesTopic();
+    }
 
     @Test
     public void testSave() throws InterruptedException, ExecutionException, JsonProcessingException {
@@ -43,7 +53,7 @@ class ServiceInstanceRepositoryTest {
                 .topicName(UUID.randomUUID().toString())
                 .uuid(uuid)
                 .created(new Date())
-                .plan("default")
+                .planId(servicePlanId)
                 .build();
 
         serviceInstanceRepository.save(topicServiceInstance);

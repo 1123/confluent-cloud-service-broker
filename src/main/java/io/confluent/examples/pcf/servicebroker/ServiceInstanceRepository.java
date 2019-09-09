@@ -2,7 +2,7 @@ package io.confluent.examples.pcf.servicebroker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -15,8 +15,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 @Service
-@Log
-public class ServiceInstanceRepository {
+@Slf4j
+class ServiceInstanceRepository {
 
     @Autowired
     private ServiceInstanceCache serviceInstanceCache;
@@ -30,6 +30,7 @@ public class ServiceInstanceRepository {
     private ObjectMapper objectMapper = new ObjectMapper();
 
     void save(TopicServiceInstance serviceInstance) throws JsonProcessingException, ExecutionException, InterruptedException {
+        log.info("Saving service instance to Kafka.");
         Future<RecordMetadata> result = kafkaProducer.send(
                 new ProducerRecord<>(
                         serviceInstanceStoreTopic,
@@ -47,10 +48,7 @@ public class ServiceInstanceRepository {
     /**
      * Delete a service instance. This is done by publishing a tombstone message.
      * @param uuid: the id of the service instance to be deleted.
-     * @throws ExecutionException
-     * @throws InterruptedException
      */
-
     void delete(UUID uuid) throws ExecutionException, InterruptedException {
         Future<RecordMetadata> result = kafkaProducer.send(
                 new ProducerRecord<>(
