@@ -2,6 +2,9 @@ package io.confluent.examples.pcf.servicebroker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.servicebroker.model.instance.*;
@@ -9,6 +12,7 @@ import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -19,7 +23,7 @@ import java.util.concurrent.ExecutionException;
 public class ConfluentPlatformServiceInstanceService implements ServiceInstanceService {
 
     @Autowired
-    private TopicCreator topicCreator;
+    private AdminClient adminClient;
 
     @Value( "${replication.factor}" )
     private short replicationFactor;
@@ -35,7 +39,8 @@ public class ConfluentPlatformServiceInstanceService implements ServiceInstanceS
             throw new RuntimeException("topic name is missing.");
         }
         try {
-            topicCreator.create(topic, 3, replicationFactor);
+            CreateTopicsResult result = adminClient.createTopics(Collections.singletonList(new NewTopic(topic, 1, replicationFactor)));
+            result.all().get();
             serviceInstanceRepository.save(
                     TopicServiceInstance.builder()
                             .created(new Date())

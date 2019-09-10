@@ -26,18 +26,18 @@ class ServiceInstanceRepositoryTest {
     private ServiceInstanceRepository serviceInstanceRepository;
 
     @BeforeClass
-    static void before() throws ExecutionException, InterruptedException {
+    static void setup() throws ExecutionException, InterruptedException {
         TestUtils.recreateServiceInstancesTopic();
     }
 
     @Test
-    public void testSave() throws InterruptedException, ExecutionException, JsonProcessingException {
+    void testSave() throws InterruptedException, ExecutionException, JsonProcessingException {
         TopicServiceInstance topicServiceInstance = TopicServiceInstance.builder().topicName(UUID.randomUUID().toString()).uuid(UUID.randomUUID()).created(new Date()).build();
         serviceInstanceRepository.save(topicServiceInstance);
     }
 
     @Test
-    public void testSaveAndList() throws InterruptedException, ExecutionException, JsonProcessingException {
+    void testSaveAndList() throws InterruptedException, ExecutionException, JsonProcessingException {
         UUID uuid = UUID.randomUUID();
         TopicServiceInstance topicServiceInstance = TopicServiceInstance.builder().topicName(UUID.randomUUID().toString()).uuid(uuid).created(new Date()).build();
         serviceInstanceRepository.save(topicServiceInstance);
@@ -47,7 +47,7 @@ class ServiceInstanceRepositoryTest {
     }
 
     @Test
-    public void testSaveAndDelete() throws InterruptedException, ExecutionException, JsonProcessingException {
+    void testSaveAndDelete() throws InterruptedException, ExecutionException, JsonProcessingException {
         UUID uuid = UUID.randomUUID();
         TopicServiceInstance topicServiceInstance = TopicServiceInstance.builder()
                 .topicName(UUID.randomUUID().toString())
