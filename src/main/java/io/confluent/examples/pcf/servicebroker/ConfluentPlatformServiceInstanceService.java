@@ -12,10 +12,7 @@ import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -47,6 +44,7 @@ public class ConfluentPlatformServiceInstanceService implements ServiceInstanceS
                             .topicName(topic)
                             .uuid(UUID.fromString(createServiceInstanceRequest.getServiceInstanceId()))
                             .planId(UUID.fromString(createServiceInstanceRequest.getPlanId()))
+                            .bindings(new ArrayList<>())
                             .build()
             );
         } catch (ExecutionException | InterruptedException | JsonProcessingException e) {

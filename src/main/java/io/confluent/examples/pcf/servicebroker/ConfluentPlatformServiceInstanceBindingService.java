@@ -80,27 +80,39 @@ public class ConfluentPlatformServiceInstanceBindingService implements ServiceIn
         if (! binding.isPresent()) {
             throw new RuntimeException("No such binding. ");
         }
-        removeAcls(topicServiceInstance, request, binding.get());
+        removeAcls(topicServiceInstance, binding.get());
         try {
-            removeBinding(topicServiceInstance, request, binding.get());
+            removeBinding(topicServiceInstance, request);
         } catch (InterruptedException | ExecutionException | JsonProcessingException e) {
             e.printStackTrace();
         }
         return Mono.just(DeleteServiceInstanceBindingResponse.builder().build());
     }
 
-    private void removeAcls(TopicServiceInstance topicServiceInstance, DeleteServiceInstanceBindingRequest request, TopicUserBinding binding) {
+    private void removeAcls(TopicServiceInstance topicServiceInstance, TopicUserBinding binding) {
         adminClient.deleteAcls(
                 Collections.singleton(
                         new AclBindingFilter(
-                                new ResourcePatternFilter(ResourceType.TOPIC, topicServiceInstance.topicName, PatternType.LITERAL),
-                                new AccessControlEntryFilter(binding.user, "*", AclOperation.ALL, AclPermissionType.ALLOW)
+                                new ResourcePatternFilter(
+                                        ResourceType.TOPIC,
+                                        topicServiceInstance.topicName,
+                                        PatternType.LITERAL
+                                ),
+                                new AccessControlEntryFilter(
+                                        binding.user,
+                                        "*",
+                                        AclOperation.ALL,
+                                        AclPermissionType.ALLOW
+                                )
                         )
                 )
         );
     }
 
-    private void removeBinding(TopicServiceInstance topicServiceInstance, DeleteServiceInstanceBindingRequest request, TopicUserBinding binding) throws InterruptedException, ExecutionException, JsonProcessingException {
+    private void removeBinding(
+            TopicServiceInstance topicServiceInstance,
+            DeleteServiceInstanceBindingRequest request
+    ) throws InterruptedException, ExecutionException, JsonProcessingException {
         List<TopicUserBinding> remainingBindings =
                 topicServiceInstance.getBindings().stream().filter(
                         b -> !b.id.equals(request.getBindingId())).collect(Collectors.toList()
