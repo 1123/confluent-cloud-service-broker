@@ -36,27 +36,48 @@ public class Config {
         properties.put("bootstrap.servers", bootstrapServers);
         properties.put("retry.backoff.ms", "500");
         properties.put("request.timeout.ms", "20000");
+        properties.put("sasl.mechanism", "PLAIN");
+        properties.put("security.protocol", "SASL_PLAINTEXT");
+        properties.put("sasl.jaas.config",
+                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"admin-secret\";");
+        /*
+        sasl.mechanism=PLAIN
+# Configure SASL_SSL if SSL encryption is enabled, otherwise configure SASL_PLAINTEXT
+security.protocol=SASL_PLAINTEXT
+sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required \
+  username="admin" \
+  password="admin-secret";
+         */
+
         return AdminClient.create(properties);
     }
 
     @Bean
     public KafkaProducer<String, String> kafkaProducer() {
-        Properties producerProperties = new Properties();
-        producerProperties.put("bootstrap.servers", bootstrapServers);
-        producerProperties.put("key.serializer", StringSerializer.class);
-        producerProperties.put("value.serializer", StringSerializer.class);
-        return new KafkaProducer<>(producerProperties);
+        Properties properties = new Properties();
+        properties.put("bootstrap.servers", bootstrapServers);
+        properties.put("key.serializer", StringSerializer.class);
+        properties.put("value.serializer", StringSerializer.class);
+        properties.put("sasl.mechanism", "PLAIN");
+        properties.put("security.protocol", "SASL_PLAINTEXT");
+        properties.put("sasl.jaas.config",
+                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"admin-secret\";");
+        return new KafkaProducer<>(properties);
     }
 
     @Bean
     public KafkaConsumer<String, String> kafkaConsumer() {
-        Properties consumerProperties = new Properties();
-        consumerProperties.put("bootstrap.servers", bootstrapServers);
-        consumerProperties.put("key.deserializer", StringDeserializer.class);
-        consumerProperties.put("value.deserializer", StringDeserializer.class);
-        consumerProperties.put("group.id", UUID.randomUUID().toString()); // always read from the beginning.
-        consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        return new KafkaConsumer<>(consumerProperties);
+        Properties properties = new Properties();
+        properties.put("bootstrap.servers", bootstrapServers);
+        properties.put("key.deserializer", StringDeserializer.class);
+        properties.put("value.deserializer", StringDeserializer.class);
+        properties.put("group.id", UUID.randomUUID().toString()); // always read from the beginning.
+        properties.put("sasl.mechanism", "PLAIN");
+        properties.put("security.protocol", "SASL_PLAINTEXT");
+        properties.put("sasl.jaas.config",
+                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"admin-secret\";");
+        properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        return new KafkaConsumer<>(properties);
     }
 
     @Bean

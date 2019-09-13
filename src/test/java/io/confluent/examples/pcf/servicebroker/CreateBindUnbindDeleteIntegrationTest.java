@@ -2,11 +2,14 @@ package io.confluent.examples.pcf.servicebroker;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.cloud.servicebroker.model.binding.BindResource;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -18,25 +21,29 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Slf4j
-class ApplicationTest {
+public class CreateBindUnbindDeleteIntegrationTest {
 
     @Value("${service.uuid}") String serviceUUID;
     @Value("${service.plan.standard.uuid}") String servicePlanUUID;
 
     private RestTemplate restTemplate = new RestTemplate();
 
-    @Test
-    public void contextLoads() throws InterruptedException {
-        Thread.sleep(1000);
+    @LocalServerPort
+    private int port;
+
+    private String url() {
+        return "http://localhost:" + port + "/v2/service_instances/";
     }
 
     @Test
     void testApi() {
         String serviceInstanceId = UUID.randomUUID().toString();
         createInstance(serviceInstanceId);
-        createBinding(serviceInstanceId);
+        String bindingId = UUID.randomUUID().toString();
+        createBinding(serviceInstanceId, bindingId);
+        removeBinding(serviceInstanceId, bindingId);
     }
 
     private HttpHeaders headers() {
@@ -49,7 +56,7 @@ class ApplicationTest {
         Map<String, Object> params = new HashMap<>();
         params.put("topic_name", UUID.randomUUID().toString());
         ResponseEntity<String> createResult = restTemplate.exchange(
-                "http://localhost:8080/v2/service_instances/" + serviceInstanceId,
+                url() + serviceInstanceId,
                 HttpMethod.PUT,
                 new HttpEntity<>(
                         CreateServiceInstanceRequest.builder()
@@ -64,25 +71,36 @@ class ApplicationTest {
         log.info(createResult.toString());
     }
 
-    private void createBinding(String serviceInstanceId) {
+    private void createBinding(String serviceInstanceId, String bindingId) {
         Map<String, Object> params = new HashMap<>();
-        params.put("user", "jack");
+        params.put("user", "User:admin");
         CreateServiceInstanceBindingRequest createServiceInstanceBindingRequest =
                 CreateServiceInstanceBindingRequest.builder()
                         .serviceInstanceId(serviceInstanceId)
                         .serviceDefinitionId(serviceUUID)
                         .planId(servicePlanUUID)
-                        .bindResource(BindResource.builder().appGuid(UUID.randomUUID().toString()).build())
+                        .bindResource(
+                                BindResource.builder()
+                                        .appGuid(UUID.randomUUID().toString())
+                                        .build()
+                        )
                         .parameters(params)
                         .build();
-        String bindingId = UUID.randomUUID().toString();
         ResponseEntity<String> bindResult = restTemplate.exchange(
-                "http://localhost:8080/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId,
+                url() + serviceInstanceId + "/service_bindings/" + bindingId
+                        + "?",
                 HttpMethod.PUT,
                 new HttpEntity<>(createServiceInstanceBindingRequest, headers()),
                 String.class
         );
         log.info(bindResult.toString());
+    }
+
+    private void removeBinding(String serviceInstanceId, String bindingId) {
+        restTemplate.delete(
+                url() + serviceInstanceId + "/service_bindings/" + bindingId
+                        + "?service_id=" + serviceUUID + "&plan_id=" + servicePlanUUID
+        );
     }
 
 }

@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 class TestUtils {
 
-    public static void recreateServiceInstancesTopic() throws ExecutionException, InterruptedException {
+    static void recreateServiceInstancesTopic() throws ExecutionException, InterruptedException {
         DeleteTopicsResult deleteTopicsResult = adminClient().deleteTopics(Collections.singleton("kafka.service.broker.service-instances"));
         deleteTopicsResult.all().get();
         CreateTopicsResult createTopicsResult = adminClient().createTopics(Collections.singleton(new NewTopic("kafka.service.broker.service-instances", 1, (short) 1)));
@@ -21,7 +21,13 @@ class TestUtils {
 
     private static AdminClient adminClient() {
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", "localhost:9092");
+        properties.setProperty("bootstrap.servers", "localhost:9093");
+        properties.put("retry.backoff.ms", "500");
+        properties.put("request.timeout.ms", "20000");
+        properties.put("sasl.mechanism", "PLAIN");
+        properties.put("security.protocol", "SASL_PLAINTEXT");
+        properties.put("sasl.jaas.config",
+                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"admin-secret\";");
         return AdminClient.create(properties);
     }
 
@@ -33,14 +39,9 @@ class TestUtils {
     }
 
     @Test
-    @Ignore
     void listTopics() throws InterruptedException, ExecutionException {
         ListTopicsResult result = adminClient().listTopics();
         log.info(String.valueOf(result.names().get()));
     }
-
-
-
-
 
 }
