@@ -14,10 +14,7 @@ import org.springframework.cloud.servicebroker.service.ServiceInstanceBindingSer
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -32,21 +29,27 @@ public class ConfluentPlatformServiceInstanceBindingService implements ServiceIn
 
     public Mono<CreateServiceInstanceBindingResponse> createServiceInstanceBinding(CreateServiceInstanceBindingRequest request) {
         String user = (String) request.getParameters().get("user");
-        if (user == null) throw new RuntimeException("User must be specified in bind service request. ");
+        String consumerGroup = (String) request.getParameters().get("consumerGroup");
+        if (user == null || user.equals("")) throw new RuntimeException("User must be specified in bind service request. ");
+        if (consumerGroup == null || consumerGroup.equals("")) throw new RuntimeException("Consumer group must be specified in binding request. ");
         UUID serviceInstanceId = UUID.fromString(request.getServiceInstanceId());
         TopicServiceInstance topicServiceInstance = serviceInstanceRepository.get(serviceInstanceId);
-        createAcls(topicServiceInstance.topicName, user);
+        createAcls(topicServiceInstance.topicName, user, consumerGroup);
         addBinding(topicServiceInstance, request.getBindResource().getAppGuid(), request.getBindingId(), user);
         // TODO: check if binding existed.
         return Mono.just(CreateServiceInstanceAppBindingResponse.builder().async(false).bindingExisted(false).build());
     }
 
-    private void createAcls(String topicName, String user) {
+    private void createAcls(String topicName, String user, String consumerGroup) {
         CreateAclsResult createAclsResult = adminClient.createAcls(
-                Collections.singletonList(
+                Arrays.asList(
                         // TODO: AclOperation.ALL is probably too much.
                         new AclBinding(
                                 new ResourcePattern(ResourceType.TOPIC, topicName, PatternType.LITERAL),
+                                new AccessControlEntry(user, "*", AclOperation.ALL, AclPermissionType.ALLOW)
+                        ),
+                        new AclBinding(
+                                new ResourcePattern(ResourceType.GROUP, consumerGroup, PatternType.LITERAL),
                                 new AccessControlEntry(user, "*", AclOperation.ALL, AclPermissionType.ALLOW)
                         )
                 )
