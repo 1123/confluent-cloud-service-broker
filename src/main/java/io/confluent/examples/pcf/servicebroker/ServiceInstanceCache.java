@@ -42,16 +42,21 @@ public class ServiceInstanceCache implements CommandLineRunner {
     @Autowired
     private TaskExecutor taskExecutor;
 
-    @Override
-    public void run(String... args) throws Exception {
+    private void createTopic() {
         CreateTopicsResult createTopicsResult = adminClient.createTopics(
                 Collections.singleton(new NewTopic(serviceInstanceStoreTopic, 1, (short) 1))
         );
         try {
             createTopicsResult.all().get();
-        } catch (ExecutionException e) {
-            log.info("Topic already existed. ");
+        } catch (ExecutionException | InterruptedException e) {
+            log.info("Topic may already exist. ");
+            log.info("e");
         }
+    }
+
+    @Override
+    public void run(String... args) {
+        createTopic();
         kafkaConsumer.subscribe(Collections.singletonList(serviceInstanceStoreTopic));
         taskExecutor.execute(() -> {
             while (true) {

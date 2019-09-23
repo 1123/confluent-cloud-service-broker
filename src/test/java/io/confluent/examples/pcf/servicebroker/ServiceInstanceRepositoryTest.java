@@ -25,11 +25,6 @@ class ServiceInstanceRepositoryTest {
     @Autowired
     private ServiceInstanceRepository serviceInstanceRepository;
 
-    @BeforeClass
-    static void setup() throws ExecutionException, InterruptedException {
-        TestUtils.recreateServiceInstancesTopic();
-    }
-
     @Test
     void testSave() throws InterruptedException, ExecutionException, JsonProcessingException {
         TopicServiceInstance topicServiceInstance = TopicServiceInstance.builder().topicName(UUID.randomUUID().toString()).uuid(UUID.randomUUID()).created(new Date()).build();
@@ -41,7 +36,7 @@ class ServiceInstanceRepositoryTest {
         UUID uuid = UUID.randomUUID();
         TopicServiceInstance topicServiceInstance = TopicServiceInstance.builder().topicName(UUID.randomUUID().toString()).uuid(uuid).created(new Date()).build();
         serviceInstanceRepository.save(topicServiceInstance);
-        Thread.sleep(100);
+        Thread.sleep(5000);
         TopicServiceInstance stored = serviceInstanceRepository.get(uuid);
         assertNotNull(stored);
     }
@@ -57,10 +52,10 @@ class ServiceInstanceRepositoryTest {
                 .build();
 
         serviceInstanceRepository.save(topicServiceInstance);
-        Thread.sleep(50);
+        Thread.sleep(2000);
         assertNotNull(serviceInstanceRepository.get(uuid));
         serviceInstanceRepository.delete(uuid);
-        Thread.sleep(50);
+        Thread.sleep(2000);
         assertNull(serviceInstanceRepository.get(uuid));
         serviceInstanceRepository.delete(uuid);
     }
