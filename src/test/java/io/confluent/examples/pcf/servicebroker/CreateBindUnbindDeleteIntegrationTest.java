@@ -1,7 +1,6 @@
 package io.confluent.examples.pcf.servicebroker;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -11,7 +10,6 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
@@ -35,18 +33,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Slf4j
 public class CreateBindUnbindDeleteIntegrationTest {
 
-    @Autowired
-    private AdminClient adminClient;
+    private final String serviceUUID;
+    private final String servicePlanUUID;
+    private final int port;
+    private final RestTemplate restTemplate;
+    private final String topicName;
 
-    @Value("${service.uuid}") String serviceUUID;
-    @Value("${service.plan.standard.uuid}") String servicePlanUUID;
-
-    private RestTemplate restTemplate = new RestTemplate();
-
-    private String topicName = UUID.randomUUID().toString();
-
-    @LocalServerPort
-    private int port;
+    public CreateBindUnbindDeleteIntegrationTest(
+            @Value("${service.uuid}") String serviceUUID,
+            @Value("${service.plan.standard.uuid}") String servicePlanUUID,
+            @LocalServerPort int port
+    ) {
+        this.serviceUUID = serviceUUID;
+        this.servicePlanUUID = servicePlanUUID;
+        this.port = port;
+        this.topicName = UUID.randomUUID().toString();
+        this.restTemplate = new RestTemplate();
+    }
 
     private String url() {
         return "http://localhost:" + port + "/v2/service_instances/";
@@ -151,7 +154,6 @@ public class CreateBindUnbindDeleteIntegrationTest {
                 "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"client\" password=\"client-secret\";");
         return new KafkaConsumer<>(properties);
     }
-
 
     private KafkaProducer<String, String> sampleProducer() {
         Properties properties = new Properties();
