@@ -21,13 +21,13 @@ class TestUtils {
 
     private static AdminClient adminClient() {
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", "localhost:9093");
+        properties.setProperty("bootstrap.servers", "localhost:10091");
         properties.put("retry.backoff.ms", "500");
         properties.put("request.timeout.ms", "20000");
         properties.put("sasl.mechanism", "PLAIN");
         properties.put("security.protocol", "SASL_PLAINTEXT");
         properties.put("sasl.jaas.config",
-                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"admin-secret\";");
+                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"servicebroker\" password=\"servicebroker-secret\";");
         return AdminClient.create(properties);
     }
 

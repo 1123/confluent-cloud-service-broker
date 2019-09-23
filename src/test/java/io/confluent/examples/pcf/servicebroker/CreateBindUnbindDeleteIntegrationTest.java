@@ -59,6 +59,7 @@ public class CreateBindUnbindDeleteIntegrationTest {
     void testApi() throws ExecutionException, InterruptedException {
         String serviceInstanceId = UUID.randomUUID().toString();
         createInstance(serviceInstanceId);
+        Thread.sleep(5000);
         String bindingId = UUID.randomUUID().toString();
         createBinding(serviceInstanceId, bindingId);
         testProducing();
@@ -141,7 +142,7 @@ public class CreateBindUnbindDeleteIntegrationTest {
 
     private KafkaConsumer<String, String> sampleConsumer() {
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", "localhost:9093");
+        properties.setProperty("bootstrap.servers", "localhost:10091");
         properties.put("retry.backoff.ms", "500");
         properties.put("request.timeout.ms", "20000");
         properties.put("sasl.mechanism", "PLAIN");
@@ -157,7 +158,7 @@ public class CreateBindUnbindDeleteIntegrationTest {
 
     private KafkaProducer<String, String> sampleProducer() {
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", "localhost:9093");
+        properties.setProperty("bootstrap.servers", "localhost:10091");
         properties.put("retry.backoff.ms", "500");
         properties.put("request.timeout.ms", "20000");
         properties.put("sasl.mechanism", "PLAIN");

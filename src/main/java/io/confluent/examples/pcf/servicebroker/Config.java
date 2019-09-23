@@ -39,16 +39,7 @@ public class Config {
         properties.put("sasl.mechanism", "PLAIN");
         properties.put("security.protocol", "SASL_PLAINTEXT");
         properties.put("sasl.jaas.config",
-                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"admin-secret\";");
-        /*
-        sasl.mechanism=PLAIN
-# Configure SASL_SSL if SSL encryption is enabled, otherwise configure SASL_PLAINTEXT
-security.protocol=SASL_PLAINTEXT
-sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required \
-  username="admin" \
-  password="admin-secret";
-         */
-
+                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"servicebroker\" password=\"servicebroker-secret\";");
         return AdminClient.create(properties);
     }
 
@@ -61,7 +52,7 @@ sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule require
         properties.put("sasl.mechanism", "PLAIN");
         properties.put("security.protocol", "SASL_PLAINTEXT");
         properties.put("sasl.jaas.config",
-                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"admin-secret\";");
+                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"servicebroker\" password=\"servicebroker-secret\";");
         return new KafkaProducer<>(properties);
     }
 
@@ -75,7 +66,7 @@ sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule require
         properties.put("sasl.mechanism", "PLAIN");
         properties.put("security.protocol", "SASL_PLAINTEXT");
         properties.put("sasl.jaas.config",
-                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"admin-secret\";");
+                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"servicebroker\" password=\"servicebroker-secret\";");
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return new KafkaConsumer<>(properties);
     }
