@@ -36,9 +36,21 @@ class ServiceInstanceRepositoryTest {
         UUID uuid = UUID.randomUUID();
         TopicServiceInstance topicServiceInstance = TopicServiceInstance.builder().topicName(UUID.randomUUID().toString()).uuid(uuid).created(new Date()).build();
         serviceInstanceRepository.save(topicServiceInstance);
-        Thread.sleep(5000);
-        TopicServiceInstance stored = serviceInstanceRepository.get(uuid);
-        assertNotNull(stored);
+        // wait at most 5 seconds for the data to be re-read from Kafka
+        assertNotNull(waitFor(uuid, 50, 100));
+    }
+
+    /*
+     * wait delay * iterations milliseconds for the service instance being picked up by the repository.
+     */
+    private TopicServiceInstance waitFor(UUID uuid, long delay, int iterations) throws InterruptedException {
+        TopicServiceInstance stored = null;
+        for (int i = 0; i < iterations; i++) {
+            if (stored != null) break;
+            Thread.sleep(delay);
+            stored = serviceInstanceRepository.get(uuid);
+        }
+        return stored;
     }
 
     @Test
@@ -52,11 +64,9 @@ class ServiceInstanceRepositoryTest {
                 .build();
 
         serviceInstanceRepository.save(topicServiceInstance);
-        Thread.sleep(2000);
-        assertNotNull(serviceInstanceRepository.get(uuid));
+        assertNotNull(waitFor(uuid, 50, 100));
         serviceInstanceRepository.delete(uuid);
-        Thread.sleep(2000);
-        assertNull(serviceInstanceRepository.get(uuid));
+        assertNull(waitFor(uuid, 50, 100));
         serviceInstanceRepository.delete(uuid);
     }
 
