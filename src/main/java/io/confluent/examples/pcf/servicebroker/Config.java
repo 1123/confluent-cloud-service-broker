@@ -22,13 +22,11 @@ import java.util.UUID;
 @Configuration
 public class Config {
 
-    public static String STANDARD_SERVICE_PLAN = "standard";
-
     @Value("${kafka.bootstrap.servers}")
     private String bootstrapServers;
 
-    @Value("${service.instance.consumer.group.id}")
-    private String serviceInstanceConsumerGroupId;
+    @Value("${sasl.jaas.config}")
+    private String saslJaasConfig;
 
     @Bean
     public AdminClient adminClient() {
@@ -38,8 +36,7 @@ public class Config {
         properties.put("request.timeout.ms", "20000");
         properties.put("sasl.mechanism", "PLAIN");
         properties.put("security.protocol", "SASL_PLAINTEXT");
-        properties.put("sasl.jaas.config",
-                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"servicebroker\" password=\"servicebroker-secret\";");
+        properties.put("sasl.jaas.config", saslJaasConfig);
         return AdminClient.create(properties);
     }
 
@@ -51,8 +48,7 @@ public class Config {
         properties.put("value.serializer", StringSerializer.class);
         properties.put("sasl.mechanism", "PLAIN");
         properties.put("security.protocol", "SASL_PLAINTEXT");
-        properties.put("sasl.jaas.config",
-                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"servicebroker\" password=\"servicebroker-secret\";");
+        properties.put("sasl.jaas.config", saslJaasConfig);
         return new KafkaProducer<>(properties);
     }
 
@@ -65,8 +61,7 @@ public class Config {
         properties.put("group.id", UUID.randomUUID().toString()); // always read from the beginning.
         properties.put("sasl.mechanism", "PLAIN");
         properties.put("security.protocol", "SASL_PLAINTEXT");
-        properties.put("sasl.jaas.config",
-                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"servicebroker\" password=\"servicebroker-secret\";");
+        properties.put("sasl.jaas.config", saslJaasConfig);
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return new KafkaConsumer<>(properties);
     }
@@ -88,7 +83,7 @@ public class Config {
     ) {
         Plan plan = Plan.builder()
                 .id(servicePlanUUID)
-                .name(STANDARD_SERVICE_PLAN)
+                .name(standardServicePlan)
                 .description("Provision a topic with 3 partitions and replication factor 3.")
                 .free(true)
                 .build();

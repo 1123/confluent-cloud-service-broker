@@ -38,17 +38,20 @@ public class CreateBindUnbindDeleteIntegrationTest {
     private final int port;
     private final RestTemplate restTemplate;
     private final String topicName;
+    private String saslJaasConfig;
 
     public CreateBindUnbindDeleteIntegrationTest(
             @Value("${service.uuid}") String serviceUUID,
             @Value("${service.plan.standard.uuid}") String servicePlanUUID,
-            @LocalServerPort int port
+            @LocalServerPort int port,
+            @Value("${sasl.jaas.config}") String saslJaasConfig
     ) {
         this.serviceUUID = serviceUUID;
         this.servicePlanUUID = servicePlanUUID;
         this.port = port;
         this.topicName = UUID.randomUUID().toString();
         this.restTemplate = new RestTemplate();
+        this.saslJaasConfig = saslJaasConfig;
     }
 
     private String url() {
@@ -119,13 +122,6 @@ public class CreateBindUnbindDeleteIntegrationTest {
         log.info(bindResult.toString());
     }
 
-    private void removeBinding(String serviceInstanceId, String bindingId) {
-        restTemplate.delete(
-                url() + serviceInstanceId + "/service_bindings/" + bindingId
-                        + "?service_id=" + serviceUUID + "&plan_id=" + servicePlanUUID
-        );
-    }
-
     private void testProducing() throws ExecutionException, InterruptedException {
         Future<RecordMetadata> result = sampleProducer().send(new ProducerRecord<>(topicName, "key1", "value1"));
         RecordMetadata recordMetadata = result.get();
@@ -140,6 +136,13 @@ public class CreateBindUnbindDeleteIntegrationTest {
         log.info("Received result: " + result.toString());
     }
 
+    private void removeBinding(String serviceInstanceId, String bindingId) {
+        restTemplate.delete(
+                url() + serviceInstanceId + "/service_bindings/" + bindingId
+                        + "?service_id=" + serviceUUID + "&plan_id=" + servicePlanUUID
+        );
+    }
+
     private KafkaConsumer<String, String> sampleConsumer() {
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", "localhost:10091");
@@ -151,8 +154,7 @@ public class CreateBindUnbindDeleteIntegrationTest {
         properties.put("value.deserializer", StringDeserializer.class);
         properties.put("group.id", "sampleConsumerGroup");
         properties.put("auto.offset.reset", "earliest");
-        properties.put("sasl.jaas.config",
-                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"client\" password=\"client-secret\";");
+        properties.put("sasl.jaas.config", saslJaasConfig);
         return new KafkaConsumer<>(properties);
     }
 
@@ -165,8 +167,7 @@ public class CreateBindUnbindDeleteIntegrationTest {
         properties.put("security.protocol", "SASL_PLAINTEXT");
         properties.put("key.serializer", StringSerializer.class);
         properties.put("value.serializer", StringSerializer.class);
-        properties.put("sasl.jaas.config",
-                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"client\" password=\"client-secret\";");
+        properties.put("sasl.jaas.config", saslJaasConfig);
         return new KafkaProducer<>(properties);
     }
 
