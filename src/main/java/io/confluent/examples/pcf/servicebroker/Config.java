@@ -1,5 +1,6 @@
 package io.confluent.examples.pcf.servicebroker;
 
+import com.fasterxml.jackson.databind.util.ObjectBuffer;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -7,14 +8,14 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.servicebroker.model.catalog.Catalog;
-import org.springframework.cloud.servicebroker.model.catalog.Plan;
-import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
+import org.springframework.cloud.servicebroker.model.catalog.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -74,6 +75,43 @@ public class Config {
         return threadPoolTaskExecutor;
     }
 
+    private Map<String, Object> createParameters() {
+        Map<String, Object> createProperties = new HashMap<>();
+        Map<String, Object> topicNameProperties = new HashMap<>();
+        topicNameProperties.put("description", "name des topics");
+        topicNameProperties.put("type", "string");
+        createProperties.put("topicNames", topicNameProperties);
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("[$schema]", "http://json-schema.org/draft-04/schema#");
+        parameters.put("description", "Name des Topics");
+        parameters.put("type", "object");
+        parameters.put("properties", createProperties);
+        return parameters;
+    }
+
+    private Schemas schemas() {
+        return Schemas.builder()
+                .serviceInstanceSchema(
+                        ServiceInstanceSchema.builder()
+                                .createMethodSchema(
+                                        MethodSchema.builder()
+                                                .parameters(createParameters())
+                                                .build()
+                                )
+                                .build()
+                )
+                .serviceBindingSchema(
+                        ServiceBindingSchema.builder()
+                                .createMethodSchema(
+                                        MethodSchema.builder()
+                                                .parameters(createParameters())
+                                                .build()
+                                )
+                                .build()
+                )
+                .build();
+    }
+
     @Bean
     public Catalog catalog(
             @Value("${service.uuid}") String serviceUUID,
@@ -85,6 +123,7 @@ public class Config {
                 .id(servicePlanUUID)
                 .name(standardServicePlan)
                 .description("Provision a topic with 3 partitions and replication factor 3.")
+                //.schemas(schemas())
                 .free(true)
                 .build();
 
