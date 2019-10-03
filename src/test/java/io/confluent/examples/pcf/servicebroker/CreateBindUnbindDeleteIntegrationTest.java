@@ -1,6 +1,7 @@
 package io.confluent.examples.pcf.servicebroker;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -10,16 +11,20 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.cloud.servicebroker.model.binding.BindResource;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
@@ -31,21 +36,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Slf4j
+@ExtendWith(KafkaJunitExtension.class)
 public class CreateBindUnbindDeleteIntegrationTest {
 
-    private final String serviceUUID;
-    private final String servicePlanUUID;
-    private final int port;
-    private final RestTemplate restTemplate;
-    private final String topicName;
+    private String serviceUUID = null;
+    private String servicePlanUUID = null;
+    private int port = 0;
+    private RestTemplate restTemplate = null;
+    private String topicName;
     private String saslJaasConfig;
+
+    @Autowired
+    private ConfigurableApplicationContext configurableApplicationContext;
 
     public CreateBindUnbindDeleteIntegrationTest(
             @Value("${service.uuid}") String serviceUUID,
             @Value("${service.plan.standard.uuid}") String servicePlanUUID,
             @LocalServerPort int port,
-            @Value("${sasl.jaas.config}") String saslJaasConfig
-    ) {
+            @Value("${sasl.jaas.config}") String saslJaasConfig,
+            ConfigurableApplicationContext configurableApplicationContext) {
         this.serviceUUID = serviceUUID;
         this.servicePlanUUID = servicePlanUUID;
         this.port = port;
@@ -62,6 +71,7 @@ public class CreateBindUnbindDeleteIntegrationTest {
     void testApi() throws ExecutionException, InterruptedException {
         String serviceInstanceId = UUID.randomUUID().toString();
         createInstance(serviceInstanceId);
+        // TODO: we should better wait in the createServiceInstanceBinding method on the server for 5 seconds time.
         Thread.sleep(5000);
         String bindingId = UUID.randomUUID().toString();
         createBinding(serviceInstanceId, bindingId);
@@ -69,6 +79,11 @@ public class CreateBindUnbindDeleteIntegrationTest {
         testConsuming();
         removeBinding(serviceInstanceId, bindingId);
         // TODO: deleteService
+        // It is important to close the producer, consumer and the admin client
+        // prior to zookeeper and kafka being shut down.
+        // Otherwise the test will hang for quite some time.
+        log.info("Closing application context");
+        configurableApplicationContext.close();
     }
 
     private HttpHeaders headers() {
@@ -123,9 +138,11 @@ public class CreateBindUnbindDeleteIntegrationTest {
     }
 
     private void testProducing() throws ExecutionException, InterruptedException {
-        Future<RecordMetadata> result = sampleProducer().send(new ProducerRecord<>(topicName, "key1", "value1"));
+        KafkaProducer<String, String> sampleProducer = sampleProducer();
+        Future<RecordMetadata> result = sampleProducer.send(new ProducerRecord<>(topicName, "key1", "value1"));
         RecordMetadata recordMetadata = result.get();
         log.info(recordMetadata.toString());
+        sampleProducer.close();
     }
 
     private void testConsuming() {
@@ -134,6 +151,7 @@ public class CreateBindUnbindDeleteIntegrationTest {
         ConsumerRecords<String, String> result = sampleConsumer.poll(Duration.ofSeconds(10));
         assertEquals(1, result.records(new TopicPartition(topicName, 0)).size());
         log.info("Received result: " + result.toString());
+        sampleConsumer.close();
     }
 
     private void removeBinding(String serviceInstanceId, String bindingId) {

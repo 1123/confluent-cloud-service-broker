@@ -61,11 +61,12 @@ public class ServiceInstanceCache implements CommandLineRunner {
         taskExecutor.execute(() -> {
             while (true) {
                 log.info("Caching service instances.");
-                ConsumerRecords<String, String> records = kafkaConsumer.poll(Duration.ofSeconds(5));
+                    ConsumerRecords<String, String> records = kafkaConsumer.poll(Duration.ofSeconds(5));
                 log.info("Handling {} records", records.count());
                 records.forEach(this::handleRecord);
             }
         });
+
     }
 
     private void handleRecord(ConsumerRecord<String, String> record) {

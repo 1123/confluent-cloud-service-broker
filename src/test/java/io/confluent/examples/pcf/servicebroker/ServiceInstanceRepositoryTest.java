@@ -3,10 +3,14 @@ package io.confluent.examples.pcf.servicebroker;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.Date;
 import java.util.UUID;
@@ -17,7 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 @SpringBootTest
 @Slf4j
-class ServiceInstanceRepositoryTest {
+@ExtendWith({KafkaJunitExtension.class})
+public class ServiceInstanceRepositoryTest {
 
     @Value("${service.plan.standard.uuid}")
     private UUID servicePlanId;
@@ -25,20 +30,8 @@ class ServiceInstanceRepositoryTest {
     @Autowired
     private ServiceInstanceRepository serviceInstanceRepository;
 
-    @Test
-    void testSave() throws InterruptedException, ExecutionException, JsonProcessingException {
-        TopicServiceInstance topicServiceInstance = TopicServiceInstance.builder().topicName(UUID.randomUUID().toString()).uuid(UUID.randomUUID()).created(new Date()).build();
-        serviceInstanceRepository.save(topicServiceInstance);
-    }
-
-    @Test
-    void testSaveAndList() throws InterruptedException, ExecutionException, JsonProcessingException {
-        UUID uuid = UUID.randomUUID();
-        TopicServiceInstance topicServiceInstance = TopicServiceInstance.builder().topicName(UUID.randomUUID().toString()).uuid(uuid).created(new Date()).build();
-        serviceInstanceRepository.save(topicServiceInstance);
-        // wait at most 5 seconds for the data to be re-read from Kafka
-        assertNotNull(waitFor(uuid, 50, 100));
-    }
+    @Autowired
+    private ConfigurableApplicationContext configurableApplicationContext;
 
     /*
      * wait delay * iterations milliseconds for the service instance being picked up by the repository.
@@ -54,7 +47,7 @@ class ServiceInstanceRepositoryTest {
     }
 
     @Test
-    void testSaveAndDelete() throws InterruptedException, ExecutionException, JsonProcessingException {
+    void testSaveAndGetAndDelete() throws InterruptedException, ExecutionException, JsonProcessingException {
         UUID uuid = UUID.randomUUID();
         TopicServiceInstance topicServiceInstance = TopicServiceInstance.builder()
                 .topicName(UUID.randomUUID().toString())
@@ -68,8 +61,11 @@ class ServiceInstanceRepositoryTest {
         serviceInstanceRepository.delete(uuid);
         assertNull(waitFor(uuid, 50, 100));
         serviceInstanceRepository.delete(uuid);
+        configurableApplicationContext.close();
     }
 
 }
+
+
 
 

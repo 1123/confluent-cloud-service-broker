@@ -1,6 +1,5 @@
 package io.confluent.examples.pcf.servicebroker;
 
-import com.fasterxml.jackson.databind.util.ObjectBuffer;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -13,12 +12,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
-
 
 @Configuration
 public class Config {
@@ -45,6 +42,7 @@ public class Config {
     public KafkaProducer<String, String> kafkaProducer() {
         Properties properties = new Properties();
         properties.put("bootstrap.servers", bootstrapServers);
+        properties.put("client.id", "kafka-service-broker-client");
         properties.put("key.serializer", StringSerializer.class);
         properties.put("value.serializer", StringSerializer.class);
         properties.put("sasl.mechanism", "PLAIN");
@@ -61,6 +59,7 @@ public class Config {
         properties.put("value.deserializer", StringDeserializer.class);
         properties.put("group.id", UUID.randomUUID().toString()); // always read from the beginning.
         properties.put("sasl.mechanism", "PLAIN");
+        properties.put("client.id", "kafka-service-broker-client");
         properties.put("security.protocol", "SASL_PLAINTEXT");
         properties.put("sasl.jaas.config", saslJaasConfig);
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
