@@ -73,6 +73,7 @@ public class KafkaJunitExtension implements BeforeAllCallback, ExtensionContext.
                         "    username=\"admin\" " +
                         "    password=\"admin-secret\" " +
                         "    user_broker=\"broker-secret\" " +
+                        "    user_client=\"client-secret\" " +
                         "    user_servicebroker=\"servicebroker-secret\" " +
                         "    user_admin=\"admin-secret\"; ");
         kafkaProperties.setProperty("zookeeper.connect", "localhost:2181");

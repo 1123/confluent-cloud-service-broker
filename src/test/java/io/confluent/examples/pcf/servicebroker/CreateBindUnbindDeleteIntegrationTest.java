@@ -1,7 +1,6 @@
 package io.confluent.examples.pcf.servicebroker;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -24,7 +23,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
@@ -172,7 +170,7 @@ public class CreateBindUnbindDeleteIntegrationTest {
         properties.put("value.deserializer", StringDeserializer.class);
         properties.put("group.id", "sampleConsumerGroup");
         properties.put("auto.offset.reset", "earliest");
-        properties.put("sasl.jaas.config", saslJaasConfig);
+        properties.put("sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"client\" password=\"client-secret\";");
         return new KafkaConsumer<>(properties);
     }
 
@@ -185,7 +183,7 @@ public class CreateBindUnbindDeleteIntegrationTest {
         properties.put("security.protocol", "SASL_PLAINTEXT");
         properties.put("key.serializer", StringSerializer.class);
         properties.put("value.serializer", StringSerializer.class);
-        properties.put("sasl.jaas.config", saslJaasConfig);
+        properties.put("sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"client\" password=\"client-secret\";");
         return new KafkaProducer<>(properties);
     }
 
