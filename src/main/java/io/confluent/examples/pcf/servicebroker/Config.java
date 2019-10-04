@@ -26,6 +26,9 @@ public class Config {
     @Value("${sasl.jaas.config}")
     private String saslJaasConfig;
 
+    @Value("${security.protocol}")
+    private String securityProtocol;
+
     @Bean
     public AdminClient adminClient() {
         Properties properties = new Properties();
@@ -33,7 +36,7 @@ public class Config {
         properties.put("retry.backoff.ms", "500");
         properties.put("request.timeout.ms", "20000");
         properties.put("sasl.mechanism", "PLAIN");
-        properties.put("security.protocol", "SASL_PLAINTEXT");
+        properties.put("security.protocol", securityProtocol);
         properties.put("sasl.jaas.config", saslJaasConfig);
         return AdminClient.create(properties);
     }
@@ -46,7 +49,7 @@ public class Config {
         properties.put("key.serializer", StringSerializer.class);
         properties.put("value.serializer", StringSerializer.class);
         properties.put("sasl.mechanism", "PLAIN");
-        properties.put("security.protocol", "SASL_PLAINTEXT");
+        properties.put("security.protocol", securityProtocol);
         properties.put("sasl.jaas.config", saslJaasConfig);
         return new KafkaProducer<>(properties);
     }
@@ -60,7 +63,7 @@ public class Config {
         properties.put("group.id", UUID.randomUUID().toString()); // always read from the beginning.
         properties.put("sasl.mechanism", "PLAIN");
         properties.put("client.id", "kafka-service-broker-client");
-        properties.put("security.protocol", "SASL_PLAINTEXT");
+        properties.put("security.protocol", securityProtocol);
         properties.put("sasl.jaas.config", saslJaasConfig);
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return new KafkaConsumer<>(properties);

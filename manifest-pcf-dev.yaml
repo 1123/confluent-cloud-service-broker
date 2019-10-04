@@ -1,0 +1,8 @@
+---
+applications:
+- name: kafka-service-broker
+  path: target/kafka-service-broker-1.0-SNAPSHOT.jar
+  memory: 1G
+  env:
+    JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 11.+ }, memory_calculator: { stack_threads: 25 } }'
+    SPRING_PROFILES_ACTIVE: ccloud
