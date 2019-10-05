@@ -4,8 +4,9 @@ This is a Cloudfoundry service broker for provisioning and giving access to Kafk
 Registering this service broker with a Kubernetes Service Catalog has not been tested yet. 
 Currently the only tested authentication method to the Kafka Cluster is SASL plain. 
 Adding support for other authentication mechanisms should only require changes to configuration. 
+This service broker has been validated to work with Confluent Cloud. 
 
-The service broker works as follows:
+The service broker is meant to give access to a central multitenant cluster and provides the following functionality:
 
 * the 'cf create service' expects a topic name as parameter and will create the topic via the Kafka admin client API.
 * the 'cf bind service' command expects the following parameters: 
@@ -14,12 +15,13 @@ The service broker works as follows:
 
 ## Prerequisites
 
-* a recent version of Java for building
+* Java 11 or later
 * maven 
-* access to maven central for downloadnig dependencies
-* a cloud foundry installation for registering the service broker
-* docker and docker-compose when running the application locally
-* access to confluent images when running locally
+* access to maven central for downloading dependencies
+* a Cloud Foundry installation for registering the service broker
+* docker and docker-compose when trying out the application locally 
+* access to confluent docker images when running locally
+* When connecting to Confluent Cloud, a API Key and API Secret
 
 ## Testing
 
@@ -27,9 +29,18 @@ For integration testing a local Zookeeper server and Kafka broker are started.
 
 * running the tests is as simple as `mvn clean test`.
 
+## Connecting to Confluent Cloud
+
+* Insert your api key and secret into `application-ccloud.properties`.
+* run your the service broker with the ccloud spring profile: `export SPRING_PROFILES_ACTIVE=ccloud; mvn spring-boot:run`
+
 ## Running locally
 
 * You need access to a Kafka cluster with SASL Plain authentication mechanism enabled. You can get this by running `docker-compose up`. 
 * Adjust the configuration in `src/main/resources/application.properties`. 
 * Run `mvn spring-boot:run`
 
+# Running on CloudFoundry
+
+* Adjust manifest-pcf-dev.yaml to your needs and copy to manifest.yml
+* `cf push -f manifest.yml`.
