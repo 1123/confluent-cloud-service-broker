@@ -83,6 +83,7 @@ public class KafkaJunitExtension implements BeforeAllCallback, ExtensionContext.
         kafkaProperties.setProperty("delete.topic.enable", "true");
         kafkaProperties.setProperty("offsets.topic.replication.factor", "1");
         kafkaProperties.setProperty("auto.create.topics.enable", "false");
+        kafkaProperties.setProperty("zookeeper.connection.timeout.ms", "30000");
         broker = new KafkaServerStartable(new KafkaConfig(kafkaProperties));
         broker.startup();
     }

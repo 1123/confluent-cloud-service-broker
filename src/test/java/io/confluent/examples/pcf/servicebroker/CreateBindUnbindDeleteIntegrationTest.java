@@ -9,6 +9,7 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -37,12 +40,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ExtendWith(KafkaJunitExtension.class)
 public class CreateBindUnbindDeleteIntegrationTest {
 
-    private String serviceUUID = null;
-    private String servicePlanUUID = null;
-    private int port = 0;
-    private RestTemplate restTemplate = null;
+    private String serviceUUID;
+    private String servicePlanUUID;
+    private int port;
+    private RestTemplate restTemplate;
     private String topicName;
-    private String saslJaasConfig;
+    private String restApiUser;
+    private String restApiPassword;
 
     @Autowired
     private ConfigurableApplicationContext configurableApplicationContext;
@@ -50,19 +54,21 @@ public class CreateBindUnbindDeleteIntegrationTest {
     public CreateBindUnbindDeleteIntegrationTest(
             @Value("${service.uuid}") String serviceUUID,
             @Value("${service.plan.standard.uuid}") String servicePlanUUID,
+            @Value("${rest.api.user}") String restApiUser,
+            @Value("${rest.api.password}") String restApiPassword,
             @LocalServerPort int port,
-            @Value("${sasl.jaas.config}") String saslJaasConfig,
             ConfigurableApplicationContext configurableApplicationContext) {
         this.serviceUUID = serviceUUID;
         this.servicePlanUUID = servicePlanUUID;
         this.port = port;
         this.topicName = UUID.randomUUID().toString();
         this.restTemplate = new RestTemplate();
-        this.saslJaasConfig = saslJaasConfig;
+        this.restApiUser = restApiUser;
+        this.restApiPassword = restApiPassword;
     }
 
     private String url() {
-        return "http://localhost:" + port + "/v2/service_instances/";
+        return String.format("http://localhost:%d/v2/service_instances/", port);
     }
 
     @Test
@@ -84,9 +90,16 @@ public class CreateBindUnbindDeleteIntegrationTest {
         configurableApplicationContext.close();
     }
 
+    private String authHeader() {
+        String auth = restApiUser + ":" + restApiPassword;
+        byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(StandardCharsets.US_ASCII));
+        return "Basic " + new String( encodedAuth );
+    }
+
     private HttpHeaders headers() {
         HttpHeaders headers = new HttpHeaders();
         headers.put("X-Broker-API-Version", Collections.singletonList("2.12"));
+        headers.put("Authorization", Collections.singletonList(authHeader()));
         return headers;
     }
 
@@ -153,9 +166,12 @@ public class CreateBindUnbindDeleteIntegrationTest {
     }
 
     private void removeBinding(String serviceInstanceId, String bindingId) {
-        restTemplate.delete(
+        restTemplate.exchange(
                 url() + serviceInstanceId + "/service_bindings/" + bindingId
-                        + "?service_id=" + serviceUUID + "&plan_id=" + servicePlanUUID
+                        + "?service_id=" + serviceUUID + "&plan_id=" + servicePlanUUID,
+                HttpMethod.DELETE,
+                new HttpEntity<>(null, headers()),
+                String.class
         );
     }
 
