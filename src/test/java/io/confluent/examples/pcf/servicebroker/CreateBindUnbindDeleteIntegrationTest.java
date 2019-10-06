@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Slf4j
@@ -81,9 +82,9 @@ public class CreateBindUnbindDeleteIntegrationTest {
         testProducing();
         testConsuming();
         removeBinding(serviceInstanceId, bindingId);
-        // TODO: deleteService
-        // It is important to close the producer, consumer and the admin client
-        // prior to zookeeper and kafka being shut down.
+        ResponseEntity<String> deleteServiceResponseEntity = deleteService(serviceInstanceId);
+        assertTrue(deleteServiceResponseEntity.getStatusCode().is2xxSuccessful());
+        // Close the producer, consumer and the admin client prior to zookeeper and kafka being shut down.
         // Otherwise the test will hang for quite some time.
         log.info("Closing application context");
         configurableApplicationContext.close();
@@ -171,6 +172,20 @@ public class CreateBindUnbindDeleteIntegrationTest {
                         url(),
                         serviceInstanceId,
                         bindingId,
+                        serviceUUID,
+                        servicePlanUUID),
+                HttpMethod.DELETE,
+                new HttpEntity<>(null, headers()),
+                String.class
+        );
+    }
+
+    private ResponseEntity<String> deleteService(String serviceInstanceId) {
+        return restTemplate.exchange(
+                String.format(
+                        "%s%s?service_id=%s&plan_id=%s",
+                        url(),
+                        serviceInstanceId,
                         serviceUUID,
                         servicePlanUUID),
                 HttpMethod.DELETE,

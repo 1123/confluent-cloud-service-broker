@@ -1,3 +1,4 @@
+# include the service catalog definition
 spring:
   profiles:
     include:
