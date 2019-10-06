@@ -40,7 +40,7 @@ For integration testing a local Zookeeper server and Kafka broker are started.
 * Adjust the configuration in `src/main/resources/application.properties`. 
 * Run `mvn spring-boot:run`
 
-# Running on CloudFoundry
+## Running on CloudFoundry
 
 * Adjust manifest-pcf-dev.yaml to your needs and copy to manifest.yml
 * `cf push -f manifest.yml`.

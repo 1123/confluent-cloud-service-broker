@@ -22,7 +22,7 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 public class ServiceInstanceCache implements CommandLineRunner {
 
-    @Value("${service.instance.store.topic}")
+    @Value("${broker.store.topic.name}")
     private String serviceInstanceStoreTopic;
     private ObjectMapper objectMapper = new ObjectMapper();
 

@@ -1,0 +1,51 @@
+spring:
+  profiles:
+    include:
+      - catalog
+
+management:
+  endpoints:
+    enabled-by-default: true
+    info-enabled: true
+    web:
+      exposure:
+        include: health,info,mappings
+
+info:
+  app:
+    name: Service Broker for Apache Kafka
+    java:
+      version: 11
+    type: Spring Boot
+
+broker:
+  store:
+    topic:
+      name: kafka.service.broker.service-instances
+      replication: 3
+  api:
+    user: cloud-controller
+    password: 13E663CA-1514-4278-A69D-84ACB4BF5B38
+  kafka:
+    bootstrap-servers: <your-bootstrap-servers:port>
+    sasl-jaas-config: org.apache.kafka.common.security.plain.PlainLoginModule required username="<your api key>" password="<your api secret>";
+    security-protocol: SASL_SSL
+
+ssl:
+  endpoint:
+    identification:
+      algorithm: https
+request:
+  timout:
+    ms: 20000
+retry:
+  backoff:
+    ms: 500
+
+logging:
+  level:
+    root: WARN
+    io.confluent.examples.pcf.servicebroker: DEBUG
+
+
+

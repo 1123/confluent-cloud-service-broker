@@ -18,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.cloud.servicebroker.model.binding.BindResource;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest;
+import org.springframework.cloud.servicebroker.model.catalog.Catalog;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpEntity;
@@ -26,7 +27,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -48,23 +48,22 @@ public class CreateBindUnbindDeleteIntegrationTest {
     private String restApiUser;
     private String restApiPassword;
 
-    @Autowired
     private ConfigurableApplicationContext configurableApplicationContext;
 
     public CreateBindUnbindDeleteIntegrationTest(
-            @Value("${service.uuid}") String serviceUUID,
-            @Value("${service.plan.standard.uuid}") String servicePlanUUID,
-            @Value("${rest.api.user}") String restApiUser,
-            @Value("${rest.api.password}") String restApiPassword,
+            @Autowired Catalog catalog,
+            @Value("${broker.api.user}") String restApiUser,
+            @Value("${broker.api.password}") String restApiPassword,
             @LocalServerPort int port,
-            ConfigurableApplicationContext configurableApplicationContext) {
-        this.serviceUUID = serviceUUID;
-        this.servicePlanUUID = servicePlanUUID;
+            @Autowired ConfigurableApplicationContext configurableApplicationContext) {
+        this.servicePlanUUID = catalog.getServiceDefinitions().get(0).getPlans().get(0).getId();
+        this.serviceUUID = catalog.getServiceDefinitions().get(0).getId();
         this.port = port;
         this.topicName = UUID.randomUUID().toString();
         this.restTemplate = new RestTemplate();
         this.restApiUser = restApiUser;
         this.restApiPassword = restApiPassword;
+        this.configurableApplicationContext = configurableApplicationContext;
     }
 
     private String url() {
@@ -167,8 +166,13 @@ public class CreateBindUnbindDeleteIntegrationTest {
 
     private void removeBinding(String serviceInstanceId, String bindingId) {
         restTemplate.exchange(
-                url() + serviceInstanceId + "/service_bindings/" + bindingId
-                        + "?service_id=" + serviceUUID + "&plan_id=" + servicePlanUUID,
+                String.format(
+                        "%s%s/service_bindings/%s?service_id=%s&plan_id=%s",
+                        url(),
+                        serviceInstanceId,
+                        bindingId,
+                        serviceUUID,
+                        servicePlanUUID),
                 HttpMethod.DELETE,
                 new HttpEntity<>(null, headers()),
                 String.class

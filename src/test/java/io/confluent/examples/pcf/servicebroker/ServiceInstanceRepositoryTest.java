@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.servicebroker.model.catalog.Catalog;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.annotation.DirtiesContext;
 
@@ -24,8 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 @ExtendWith({KafkaJunitExtension.class})
 public class ServiceInstanceRepositoryTest {
 
-    @Value("${service.plan.standard.uuid}")
-    private UUID servicePlanId;
+    @Autowired
+    private Catalog catalog;
 
     @Autowired
     private ServiceInstanceRepository serviceInstanceRepository;
@@ -53,7 +54,9 @@ public class ServiceInstanceRepositoryTest {
                 .topicName(UUID.randomUUID().toString())
                 .uuid(uuid)
                 .created(new Date())
-                .planId(servicePlanId)
+                .planId(UUID.fromString(
+                        catalog.getServiceDefinitions().get(0).getPlans().get(0).getId())
+                )
                 .build();
 
         serviceInstanceRepository.save(topicServiceInstance);

@@ -24,7 +24,7 @@ class ServiceInstanceRepository {
     @Autowired
     private KafkaProducer<String, String> kafkaProducer;
 
-    @Value("${service.instance.store.topic}")
+    @Value("${broker.store.topic.name}")
     private String serviceInstanceStoreTopic;
 
     private ObjectMapper objectMapper = new ObjectMapper();

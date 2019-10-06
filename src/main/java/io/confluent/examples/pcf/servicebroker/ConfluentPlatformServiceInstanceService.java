@@ -22,7 +22,7 @@ public class ConfluentPlatformServiceInstanceService implements ServiceInstanceS
     @Autowired
     private AdminClient adminClient;
 
-    @Value( "${replication.factor}" )
+    @Value( "${broker.store.topic.replication}" )
     private short replicationFactor;
 
     @Autowired

@@ -1,0 +1,25 @@
+spring:
+  cloud:
+    openservicebroker:
+      catalog:
+        services:
+          - id: d439bf26-0d84-4482-b83a-028c568557c2
+            name: confluent-kafka
+            description: A service broker for Apache Kafka
+            bindable: true
+            tags:
+              - confluent
+              - kafka
+              - topic
+              - streaming
+              - events
+            plans:
+              - id: 4d066a85-d33f-440f-8930-f1e6fc611455
+                name: standard
+                description: Provisions a topic with one partition.
+              - id: 074D36E6-AF3D-479A-A547-C7D1C776070B
+                name: medium
+                description: Provisions a topic with 6 partitions.
+              - id: 37CFEC46-3447-4001-8E4D-873517F6AE76
+                name: gold
+                description: Provisions a topic with 15 partitions.

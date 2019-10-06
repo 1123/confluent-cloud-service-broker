@@ -14,8 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Value("${rest.api.user}") private String restApiUser;
-    @Value("${rest.api.password}") private String restApiPassword;
+    @Value("${broker.api.user}") private String restApiUser;
+    @Value("${broker.api.password}") private String restApiPassword;
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
