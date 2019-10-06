@@ -125,7 +125,7 @@ public class CreateBindUnbindDeleteIntegrationTest {
     private void createBinding(String serviceInstanceId, String bindingId) {
         Map<String, Object> params = new HashMap<>();
         params.put("user", "User:client");
-        params.put("consumerGroup", "sampleConsumerGroup");
+        params.put("consumer_group", "sampleConsumerGroup");
         CreateServiceInstanceBindingRequest createServiceInstanceBindingRequest =
                 CreateServiceInstanceBindingRequest.builder()
                         .serviceInstanceId(serviceInstanceId)

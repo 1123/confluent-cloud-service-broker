@@ -43,4 +43,9 @@ For integration testing a local Zookeeper server and Kafka broker are started.
 ## Running on CloudFoundry
 
 * Adjust manifest-pcf-dev.yaml to your needs and copy to manifest.yml
-* `cf push -f manifest.yml`.
+* Push to cloudfoundry `cf push -f manifest.yml`.
+* register the service broker with cloudfoundry `cf create-service-broker kafka-broker <user> <password> http://kafka-service-broker.dev.cfdev.sh`
+* Enable service access: `cf enable-service-access confluent-kafka`
+* Try out creating a topic: `cf create-service confluent-kafka gold my-topic -c '{ "topic_name" : "gold-topic" }'`
+* Bind to an application: `cf bind-service kafka-service-broker my-topic -c '{ "user": "User:bob", "consumer_group" : "consumer_group_1" }'`
+

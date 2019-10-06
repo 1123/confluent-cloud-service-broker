@@ -9,6 +9,7 @@ import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.resource.ResourcePatternFilter;
 import org.apache.kafka.common.resource.ResourceType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.servicebroker.model.binding.*;
 import org.springframework.cloud.servicebroker.service.ServiceInstanceBindingService;
 import org.springframework.stereotype.Service;
@@ -27,9 +28,12 @@ public class ConfluentPlatformServiceInstanceBindingService implements ServiceIn
     @Autowired
     private AdminClient adminClient;
 
+    @Value("${broker.kafka.bootstrap-servers}")
+    private String kafkaBootstrapServers;
+
     public Mono<CreateServiceInstanceBindingResponse> createServiceInstanceBinding(CreateServiceInstanceBindingRequest request) {
         String user = (String) request.getParameters().get("user");
-        String consumerGroup = (String) request.getParameters().get("consumerGroup");
+        String consumerGroup = (String) request.getParameters().get("consumer_group");
         if (user == null || user.equals("")) throw new RuntimeException("User must be specified in bind service request. ");
         if (consumerGroup == null || consumerGroup.equals("")) throw new RuntimeException("Consumer group must be specified in binding request. ");
         UUID serviceInstanceId = UUID.fromString(request.getServiceInstanceId());
@@ -37,7 +41,18 @@ public class ConfluentPlatformServiceInstanceBindingService implements ServiceIn
         createAcls(topicServiceInstance.topicName, user, consumerGroup);
         addBinding(topicServiceInstance, request.getBindResource().getAppGuid(), request.getBindingId(), user);
         // TODO: check if binding existed.
-        return Mono.just(CreateServiceInstanceAppBindingResponse.builder().async(false).bindingExisted(false).build());
+        Map<String, Object> credentials = new HashMap<>();
+        credentials.put("url", kafkaBootstrapServers);
+        credentials.put("user", user);
+        credentials.put("topic", topicServiceInstance.topicName);
+        credentials.put("consumer_group", consumerGroup);
+        return Mono.just(
+                CreateServiceInstanceAppBindingResponse.builder()
+                        .credentials(credentials)
+                        .async(false)
+                        .bindingExisted(false)
+                        .build()
+        );
     }
 
     private void createAcls(String topicName, String user, String consumerGroup) {
