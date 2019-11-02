@@ -24,6 +24,10 @@ public class ServiceInstanceCache implements CommandLineRunner {
 
     @Value("${broker.store.topic.name}")
     private String serviceInstanceStoreTopic;
+
+    @Value("${broker.store.topic.replication}")
+    private short replicationFactor;
+
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @Getter
@@ -46,7 +50,7 @@ public class ServiceInstanceCache implements CommandLineRunner {
     private void createServiceInstancesTopic() throws InterruptedException {
         log.info("Creating service instances topic");
         CreateTopicsResult createTopicsResult = adminClient.createTopics(
-                Collections.singleton(new NewTopic(serviceInstanceStoreTopic, 1, (short) 1))
+                Collections.singleton(new NewTopic(serviceInstanceStoreTopic, 1, replicationFactor))
         );
         try {
             createTopicsResult.all().get();
