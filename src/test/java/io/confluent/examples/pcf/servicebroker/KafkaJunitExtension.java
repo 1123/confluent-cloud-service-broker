@@ -1,5 +1,6 @@
 package io.confluent.examples.pcf.servicebroker;
 
+import ch.qos.logback.core.util.FileUtil;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServerStartable;
 import lombok.extern.slf4j.Slf4j;
@@ -45,8 +46,10 @@ public class KafkaJunitExtension implements BeforeAllCallback, ExtensionContext.
         log.info("Starting zookeeper");
         String zkSnapshostsDir = "/tmp/zk-snapshots";
         String zkLogsDir = "/tmp/zk-logs";
-        FileUtils.cleanDirectory(new File(zkSnapshostsDir));
-        FileUtils.cleanDirectory(new File(zkLogsDir));
+        FileUtils.deleteDirectory(new File(zkLogsDir));
+        FileUtils.forceMkdir(new File(zkLogsDir));
+        FileUtils.deleteDirectory(new File(zkSnapshostsDir));
+        FileUtils.forceMkdir(new File(zkSnapshostsDir));
 
         zooKeeperServer = new ZooKeeperServer(
                 new File(zkSnapshostsDir),
