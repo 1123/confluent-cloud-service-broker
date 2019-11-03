@@ -54,7 +54,7 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-open-service-broker</artifactId>
-            <version>3.0.3.RELEASE</version>
+            <version>3.0.4.RELEASE</version>
         </dependency>
 
         <dependency>
