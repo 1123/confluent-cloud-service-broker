@@ -1,6 +1,5 @@
 package io.confluent.examples.pcf.servicebroker;
 
-import ch.qos.logback.core.util.FileUtil;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServerStartable;
 import lombok.extern.slf4j.Slf4j;

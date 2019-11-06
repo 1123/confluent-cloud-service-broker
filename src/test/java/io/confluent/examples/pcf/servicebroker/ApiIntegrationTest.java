@@ -25,6 +25,8 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
@@ -39,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Slf4j
 @ExtendWith(KafkaJunitExtension.class)
-public class CreateBindUnbindDeleteIntegrationTest {
+public class ApiIntegrationTest {
 
     private String serviceUUID;
     private String servicePlanUUID;
@@ -51,7 +53,7 @@ public class CreateBindUnbindDeleteIntegrationTest {
 
     private ConfigurableApplicationContext configurableApplicationContext;
 
-    public CreateBindUnbindDeleteIntegrationTest(
+    public ApiIntegrationTest(
             @Autowired Catalog catalog,
             @Value("${broker.api.user}") String restApiUser,
             @Value("${broker.api.password}") String restApiPassword,
@@ -72,6 +74,7 @@ public class CreateBindUnbindDeleteIntegrationTest {
     }
 
     @Test
+    @DirtiesContext
     void testApi() throws ExecutionException, InterruptedException {
         String serviceInstanceId = UUID.randomUUID().toString();
         createInstance(serviceInstanceId);
@@ -86,6 +89,23 @@ public class CreateBindUnbindDeleteIntegrationTest {
         assertTrue(deleteServiceResponseEntity.getStatusCode().is2xxSuccessful());
         // Close the producer, consumer and the admin client prior to zookeeper and kafka being shut down.
         // Otherwise the test will hang for quite some time.
+        log.info("Closing application context");
+        configurableApplicationContext.close();
+    }
+
+    @Test
+    @DirtiesContext
+    void theBrokerShouldReturn404WhenDeletingANonExistingServiceInstance() {
+        String serviceInstanceId = UUID.randomUUID().toString();
+        boolean exceptionThrown = false;
+        try {
+            deleteService(serviceInstanceId);
+        } catch (HttpClientErrorException e) {
+            exceptionThrown = true;
+            assertEquals(e.getRawStatusCode(), 410);
+            log.info(e.toString());
+        }
+        assertTrue(exceptionThrown);
         log.info("Closing application context");
         configurableApplicationContext.close();
     }

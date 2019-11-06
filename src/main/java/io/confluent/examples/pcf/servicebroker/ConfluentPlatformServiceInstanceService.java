@@ -7,6 +7,7 @@ import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.cloud.servicebroker.model.catalog.Catalog;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.instance.*;
@@ -23,7 +24,7 @@ public class ConfluentPlatformServiceInstanceService implements ServiceInstanceS
 
     private AdminClient adminClient;
     // TODO: we should differentiate between the replication factor of the topics that we create, and the one of the storage topic.
-    //  TODO: What about min.in.sync.replicas?
+    // TODO: What about min.in.sync.replicas?
     private short replicationFactor;
     private ServiceInstanceRepository serviceInstanceRepository;
     private Map<String, Integer> planToPartitionsMapping;
@@ -108,7 +109,12 @@ public class ConfluentPlatformServiceInstanceService implements ServiceInstanceS
 
     @Override
     public Mono<DeleteServiceInstanceResponse> deleteServiceInstance(DeleteServiceInstanceRequest deleteServiceInstanceRequest) {
+        log.info("Deleting service instance with id {}", deleteServiceInstanceRequest.getServiceInstanceId());
         TopicServiceInstance instance = serviceInstanceRepository.get(UUID.fromString(deleteServiceInstanceRequest.getServiceInstanceId()));
+        if (instance == null) {
+            log.info("Service instance not found");
+            throw new ServiceInstanceDoesNotExistException(deleteServiceInstanceRequest.getServiceInstanceId());
+        }
         adminClient.deleteTopics(Collections.singleton(instance.topicName));
         try {
             serviceInstanceRepository.delete(UUID.fromString(deleteServiceInstanceRequest.getServiceInstanceId()));

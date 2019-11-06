@@ -26,3 +26,4 @@ spring:
               - id: 37CFEC46-3447-4001-8E4D-873517F6AE76
                 name: gold
                 description: Provisions a topic with 15 partitions.
+
