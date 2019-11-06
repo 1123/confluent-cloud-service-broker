@@ -4,9 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.cloud.servicebroker.model.catalog.Catalog;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
@@ -115,7 +117,7 @@ public class ConfluentPlatformServiceInstanceService implements ServiceInstanceS
             log.info("Service instance not found");
             throw new ServiceInstanceDoesNotExistException(deleteServiceInstanceRequest.getServiceInstanceId());
         }
-        adminClient.deleteTopics(Collections.singleton(instance.topicName));
+        deleteTopic(instance.topicName);
         try {
             serviceInstanceRepository.delete(UUID.fromString(deleteServiceInstanceRequest.getServiceInstanceId()));
             return Mono.just(DeleteServiceInstanceResponse.builder().build());
@@ -123,5 +125,18 @@ public class ConfluentPlatformServiceInstanceService implements ServiceInstanceS
             e.printStackTrace();
             return Mono.empty();
         }
+    }
+
+    void deleteTopic(String topicName) {
+        try {
+            DeleteTopicsResult deleteTopicsResult = adminClient.deleteTopics(Collections.singleton(UUID.randomUUID().toString()));
+            deleteTopicsResult.all().get();
+        } catch(ExecutionException e) {
+            // if the topic is not there, then a previous delete call may have succeeded.
+            log.info("No such topic");
+        } catch (InterruptedException e) {
+            throw new ServiceBrokerException("Interrupted while trying to delete the topic");
+        }
+        adminClient.deleteTopics(Collections.singleton(topicName));
     }
 }

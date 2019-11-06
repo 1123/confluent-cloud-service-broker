@@ -52,13 +52,15 @@ public class ApiIntegrationTest {
     private String restApiPassword;
 
     private ConfigurableApplicationContext configurableApplicationContext;
+    private ConfluentPlatformServiceInstanceService confluentPlatformServiceInstanceService;
 
     public ApiIntegrationTest(
             @Autowired Catalog catalog,
             @Value("${broker.api.user}") String restApiUser,
             @Value("${broker.api.password}") String restApiPassword,
             @LocalServerPort int port,
-            @Autowired ConfigurableApplicationContext configurableApplicationContext) {
+            @Autowired ConfigurableApplicationContext configurableApplicationContext,
+            @Autowired ConfluentPlatformServiceInstanceService confluentPlatformServiceInstanceService) {
         this.servicePlanUUID = catalog.getServiceDefinitions().get(0).getPlans().get(0).getId();
         this.serviceUUID = catalog.getServiceDefinitions().get(0).getId();
         this.port = port;
@@ -67,6 +69,7 @@ public class ApiIntegrationTest {
         this.restApiUser = restApiUser;
         this.restApiPassword = restApiPassword;
         this.configurableApplicationContext = configurableApplicationContext;
+        this.confluentPlatformServiceInstanceService = confluentPlatformServiceInstanceService;
     }
 
     private String url() {
@@ -109,6 +112,14 @@ public class ApiIntegrationTest {
         log.info("Closing application context");
         configurableApplicationContext.close();
     }
+
+    @Test
+    @DirtiesContext
+    void deletingANonExistingTopicShouldNotThrowAnException() throws InterruptedException {
+        confluentPlatformServiceInstanceService.deleteTopic(UUID.randomUUID().toString());
+        configurableApplicationContext.close();
+    }
+
 
     private String authHeader() {
         String auth = restApiUser + ":" + restApiPassword;
