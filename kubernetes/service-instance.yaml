@@ -1,0 +1,11 @@
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServiceInstance
+metadata:
+  name: topic-provisioned-from-kubernetes
+  namespace: cloud-apps
+spec:
+  # References one of the previously returned services
+  clusterServiceClassExternalName: confluent-kafka
+  clusterServicePlanExternalName: gold
+  parameters:
+    topic_name: topic-provisioned-from-kubernetes
