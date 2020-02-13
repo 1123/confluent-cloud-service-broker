@@ -3,3 +3,8 @@
 target/
 src/main/resources/application-ccloudbenedikt.yaml
 manifest-benedikt.yaml
+
+# Eclipse
+.project
+.classpath
+.settings
