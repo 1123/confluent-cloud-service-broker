@@ -41,18 +41,25 @@ public class KafkaJunitExtension implements BeforeAllCallback, ExtensionContext.
     private static ZooKeeperServer zooKeeperServer;
     private static KafkaServerStartable broker;
 
+    private static File initializeFolder(String path) throws IOException {
+        File file = new File(path);
+        if (file.exists()) {
+            FileUtils.cleanDirectory(file);
+        } else {
+            file.mkdir();
+        }
+
+        return file;
+    }
+
     private static void startUpZookeeper() throws IOException, InterruptedException {
         log.info("Starting zookeeper");
-        String zkSnapshostsDir = "/tmp/zk-snapshots";
-        String zkLogsDir = "/tmp/zk-logs";
-        FileUtils.deleteDirectory(new File(zkLogsDir));
-        FileUtils.forceMkdir(new File(zkLogsDir));
-        FileUtils.deleteDirectory(new File(zkSnapshostsDir));
-        FileUtils.forceMkdir(new File(zkSnapshostsDir));
+        File zkSnapshostsDir = initializeFolder("/tmp/zk-snapshots");
+        File zkLogsDir = initializeFolder("/tmp/zk-logs");
 
         zooKeeperServer = new ZooKeeperServer(
-                new File(zkSnapshostsDir),
-                new File(zkLogsDir),
+                zkSnapshostsDir,
+                zkLogsDir,
                 2000);
         ServerCnxnFactory factory = NIOServerCnxnFactory.createFactory();
         factory.configure(new InetSocketAddress("localhost", 2181), 100);
