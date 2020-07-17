@@ -1,6 +1,7 @@
 package io.confluent.examples.pcf.servicebroker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.CreateAclsResult;
 import org.apache.kafka.common.acl.*;
@@ -20,6 +21,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class ConfluentPlatformServiceInstanceBindingService implements ServiceInstanceBindingService {
 
     @Autowired
@@ -93,10 +95,15 @@ public class ConfluentPlatformServiceInstanceBindingService implements ServiceIn
 
     public Mono<DeleteServiceInstanceBindingResponse> deleteServiceInstanceBinding(DeleteServiceInstanceBindingRequest request) {
         TopicServiceInstance topicServiceInstance = serviceInstanceRepository.get(UUID.fromString(request.getServiceInstanceId()));
+        if (topicServiceInstance == null) {
+            log.error("could not find service instance for UUID" + request.getServiceInstanceId());
+            return Mono.just(DeleteServiceInstanceBindingResponse.builder().build());
+        }
         Optional<TopicUserBinding> binding =
                 topicServiceInstance.getBindings().stream().filter(b -> b.id.equals(request.getBindingId())).findFirst();
         if (! binding.isPresent()) {
-            throw new RuntimeException("No such binding. ");
+            log.error("No such binding. ");
+            return Mono.just(DeleteServiceInstanceBindingResponse.builder().build());
         }
         removeAcls(topicServiceInstance, binding.get());
         try {

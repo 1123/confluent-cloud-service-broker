@@ -56,7 +56,7 @@ public class ServiceInstanceCache implements CommandLineRunner {
             createTopicsResult.all().get();
         } catch (ExecutionException e) {
             log.info("Topic may already exist. ");
-            log.info("e");
+            log.info(e.getMessage());
         }
     }
 

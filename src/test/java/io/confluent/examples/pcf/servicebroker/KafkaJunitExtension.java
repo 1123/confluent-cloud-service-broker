@@ -74,7 +74,7 @@ public class KafkaJunitExtension implements BeforeAllCallback, ExtensionContext.
         kafkaProperties.setProperty("advertised.listeners", "SASL_PLAINTEXT://localhost:10091");
         kafkaProperties.setProperty("inter.broker.listener.name", "SASL_PLAINTEXT");
         kafkaProperties.setProperty("authorizer.class.name", "kafka.security.auth.SimpleAclAuthorizer");
-        kafkaProperties.setProperty("super.users", "User:client;User:admin;User:broker;User:connect;User:servicebroker");
+        kafkaProperties.setProperty("super.users", "User:admin;User:broker;User:connect;User:servicebroker");
         kafkaProperties.setProperty("sasl.enabled.mechanisms", "PLAIN");
         kafkaProperties.setProperty("sasl.mechanism.inter.broker.protocol", "PLAIN");
         kafkaProperties.setProperty("listener.name.sasl_plaintext.plain.sasl.jaas.config",
