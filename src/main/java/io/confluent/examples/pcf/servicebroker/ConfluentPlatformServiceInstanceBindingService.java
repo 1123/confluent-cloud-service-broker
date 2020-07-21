@@ -33,19 +33,27 @@ public class ConfluentPlatformServiceInstanceBindingService implements ServiceIn
     @Value("${broker.kafka.bootstrap-servers}")
     private String kafkaBootstrapServers;
 
+    @Autowired
+    private ServiceAccountAndApiKeyService serviceAccountAndApiKeyService;
+
     public Mono<CreateServiceInstanceBindingResponse> createServiceInstanceBinding(CreateServiceInstanceBindingRequest request) {
-        String user = (String) request.getParameters().get("user");
         String consumerGroup = (String) request.getParameters().get("consumer_group");
-        if (user == null || user.equals("")) throw new RuntimeException("User must be specified in bind service request. ");
         if (consumerGroup == null || consumerGroup.equals("")) throw new RuntimeException("Consumer group must be specified in binding request. ");
         UUID serviceInstanceId = UUID.fromString(request.getServiceInstanceId());
         TopicServiceInstance topicServiceInstance = serviceInstanceRepository.get(serviceInstanceId);
-        createAcls(topicServiceInstance.topicName, user, consumerGroup);
-        addBinding(topicServiceInstance, request.getBindResource().getAppGuid(), request.getBindingId(), user);
+        ServiceAccountAndApiKey serviceAccountAndApiKey = serviceAccountAndApiKeyService.getCredentials();
+        createAcls(
+                topicServiceInstance.topicName,
+                "User:" + serviceAccountAndApiKey.getServiceAccount(),
+                consumerGroup
+        );
+        addBinding(topicServiceInstance, request.getBindResource().getAppGuid(), request.getBindingId(), serviceAccountAndApiKey.getApiKey());
         // TODO: check if binding existed.
         Map<String, Object> credentials = new HashMap<>();
         credentials.put("url", kafkaBootstrapServers);
-        credentials.put("user", user);
+        credentials.put("user", serviceAccountAndApiKey.getApiKey());
+        credentials.put("password", serviceAccountAndApiKey.getApiSecret());
+        credentials.put("serviceAccount", serviceAccountAndApiKey.getServiceAccount());
         credentials.put("topic", topicServiceInstance.topicName);
         credentials.put("consumer_group", consumerGroup);
         return Mono.just(
@@ -57,17 +65,17 @@ public class ConfluentPlatformServiceInstanceBindingService implements ServiceIn
         );
     }
 
-    private void createAcls(String topicName, String user, String consumerGroup) {
+    private void createAcls(String topicName, String serviceAccount, String consumerGroup) {
         CreateAclsResult createAclsResult = adminClient.createAcls(
                 Arrays.asList(
                         // TODO: AclOperation.ALL is probably too much.
                         new AclBinding(
                                 new ResourcePattern(ResourceType.TOPIC, topicName, PatternType.LITERAL),
-                                new AccessControlEntry(user, "*", AclOperation.ALL, AclPermissionType.ALLOW)
+                                new AccessControlEntry(serviceAccount, "*", AclOperation.ALL, AclPermissionType.ALLOW)
                         ),
                         new AclBinding(
                                 new ResourcePattern(ResourceType.GROUP, consumerGroup, PatternType.LITERAL),
-                                new AccessControlEntry(user, "*", AclOperation.ALL, AclPermissionType.ALLOW)
+                                new AccessControlEntry(serviceAccount, "*", AclOperation.ALL, AclPermissionType.ALLOW)
                         )
                 )
         );
