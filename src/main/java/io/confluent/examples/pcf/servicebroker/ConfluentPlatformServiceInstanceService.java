@@ -24,12 +24,12 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 public class ConfluentPlatformServiceInstanceService implements ServiceInstanceService {
 
-    private AdminClient adminClient;
+    private final AdminClient adminClient;
     // TODO: we should differentiate between the replication factor of the topics that we create, and the one of the storage topic.
     // TODO: What about min.in.sync.replicas?
-    private short replicationFactor;
-    private ServiceInstanceRepository serviceInstanceRepository;
-    private Map<String, Integer> planToPartitionsMapping;
+    private final short replicationFactor;
+    private final ServiceInstanceRepository serviceInstanceRepository;
+    private final Map<String, Integer> planToPartitionsMapping;
 
     public ConfluentPlatformServiceInstanceService(
             @Autowired AdminClient adminClient,

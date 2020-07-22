@@ -28,14 +28,13 @@ public class ServiceInstanceCache implements CommandLineRunner {
     @Value("${broker.store.topic.replication}")
     private short replicationFactor;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Getter
-    private Map<UUID, TopicServiceInstance> instances = new HashMap<>();
-
-    private TaskExecutor taskExecutor;
-    private AdminClient adminClient;
-    private KafkaConsumer<String,String> kafkaConsumer;
+    private final Map<UUID, TopicServiceInstance> instances = new HashMap<>();
+    private final TaskExecutor taskExecutor;
+    private final AdminClient adminClient;
+    private final KafkaConsumer<String,String> kafkaConsumer;
 
     public ServiceInstanceCache(
             KafkaConsumer<String, String> kafkaConsumer,

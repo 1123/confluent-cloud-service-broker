@@ -1,6 +1,8 @@
 package io.confluent.examples.pcf.servicebroker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.confluent.examples.pcf.servicebroker.accounts.ServiceAccountAndApiKey;
+import io.confluent.examples.pcf.servicebroker.accounts.ServiceAccountAndApiKeyService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.CreateAclsResult;
@@ -41,7 +43,7 @@ public class ConfluentPlatformServiceInstanceBindingService implements ServiceIn
         if (consumerGroup == null || consumerGroup.equals("")) throw new RuntimeException("Consumer group must be specified in binding request. ");
         UUID serviceInstanceId = UUID.fromString(request.getServiceInstanceId());
         TopicServiceInstance topicServiceInstance = serviceInstanceRepository.get(serviceInstanceId);
-        ServiceAccountAndApiKey serviceAccountAndApiKey = serviceAccountAndApiKeyService.getCredentials();
+        ServiceAccountAndApiKey serviceAccountAndApiKey = serviceAccountAndApiKeyService.get();
         createAcls(
                 topicServiceInstance.topicName,
                 "User:" + serviceAccountAndApiKey.getServiceAccount(),
@@ -109,7 +111,7 @@ public class ConfluentPlatformServiceInstanceBindingService implements ServiceIn
         }
         Optional<TopicUserBinding> binding =
                 topicServiceInstance.getBindings().stream().filter(b -> b.id.equals(request.getBindingId())).findFirst();
-        if (! binding.isPresent()) {
+        if (binding.isEmpty()) {
             log.error("No such binding. ");
             return Mono.just(DeleteServiceInstanceBindingResponse.builder().build());
         }

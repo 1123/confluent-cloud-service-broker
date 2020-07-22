@@ -14,8 +14,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Value("${broker.api.user}") private String restApiUser;
-    @Value("${broker.api.password}") private String restApiPassword;
+    @Value("${broker.api.user}")
+    private String restApiUser;
+    @Value("${broker.api.password}")
+    private String restApiPassword;
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -28,6 +30,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.csrf().disable()
                 .authorizeRequests()
                 .antMatchers("/v2/**").hasRole("ADMIN")
+                .antMatchers("/accounts/**").hasRole("ADMIN")
                 .antMatchers("/actuator/**").permitAll()
                 .antMatchers("/error").permitAll()
                 .and().httpBasic();

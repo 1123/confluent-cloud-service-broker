@@ -27,7 +27,7 @@ class ServiceInstanceRepository {
     @Value("${broker.store.topic.name}")
     private String serviceInstanceStoreTopic;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     void save(TopicServiceInstance serviceInstance) throws JsonProcessingException, ExecutionException, InterruptedException {
         log.info("Saving service instance to Kafka.");
