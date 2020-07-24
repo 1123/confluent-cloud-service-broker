@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ccloud-service-broker
+  namespace: catalog
+  labels:
+    app: ccloud-service-broker
+spec:
+  containers:
+    - name: ccloud-service-broker
+      image: gcr.io/solutionsarchitect-01/ccloud-service-broker

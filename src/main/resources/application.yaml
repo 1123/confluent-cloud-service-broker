@@ -19,8 +19,6 @@ info:
       version: 11
     type: Spring Boot
 
-
-
 broker:
   clientcredentials:
     serviceAccount: serviceAccount1

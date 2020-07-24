@@ -2,7 +2,7 @@ apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
   name: topic-kubernetes2
-  namespace: cloud-apps
+  namespace: catalog
 spec:
   # References one of the previously returned services
   clusterServiceClassExternalName: confluent-kafka
