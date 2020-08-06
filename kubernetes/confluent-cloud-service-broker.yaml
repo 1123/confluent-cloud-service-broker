@@ -1,6 +1,0 @@
-apiVersion: servicecatalog.k8s.io/v1beta1
-kind: ClusterServiceBroker
-metadata:
-  name: confluent-cloud-service-broker
-spec:
-  url: https://cloud-controller:13E663CA-1514-4278-A69D-84ACB4BF5B38@kafka-service-broker.cfapps.io

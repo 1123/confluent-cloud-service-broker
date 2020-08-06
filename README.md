@@ -1,28 +1,23 @@
-# Overview
+# Confluent Cloud Shared Service Broker
 
-This is a Cloud Foundry service broker for provisioning and giving access to Kafka topics on a preprovisioned Kafka cluster. 
+This is a Kubernetes and Cloud Foundry service broker for provisioning and granting access to Kafka topics on Confluent Cloud, or for a dedicated Kafka Cluster. It is written according to the Open Service Broker API: https://www.openservicebrokerapi.org .  
 It does not provision Kafka clusters itself. 
-Registering this service broker with a Kubernetes Service Catalog has not been tested yet. 
-Currently the only tested authentication method to the Kafka Cluster is SASL plain. 
-Adding support for other authentication mechanisms should only require changes to configuration. 
-Further testing with Confluent Cloud still needs to be done. 
 
-The service broker is meant to give access to a central multitenant cluster and provides the following functionality:
+The service broker grants access to a central multi-tenant cluster and provides the following functionality:
 
-* the 'cf create service' expects a topic name as parameter and will create the topic via the Kafka admin client API.
-* the 'cf bind service' command expects the following parameters: 
-  * a user name: The service broker will use this to create ACLs on the topic, such that the user has the rights to write and read from it.
-  * a consumer group: The service broker will make sure that the user will have the rights to manage this consumer group on the broker.  
+* The concept of <em>service instance</em> in the Open Service Broker API maps to a Kafka topic. 
+* The concept of <em>service instance binding</em> in the Open Service Broker API maps to the following concepts in Kubernetes and CloudFoundry:
+  * Creation of a secret object holding credentials for accessing the topic in Kubernetes. 
+    This secret can be referenced by environment variables in the bound app, or mounted as a volume just as other Kubernetes secrets.  
+  * Injection of credentials for accessing the topic into the VCAP_SERVICES` environment variable of the app when called from CloudFoundry.   
 
 ## Prerequisites
 
 * Java 11 or later
 * maven 
 * access to maven central for downloading dependencies
-* a Cloud Foundry installation for registering the service broker
-* docker and docker-compose when trying out the application locally 
-* access to confluent docker images when running locally
-* When connecting to Confluent Cloud, a API Key and API Secret
+* a Kubernetes or Cloud Foundry installation for registering the service broker. Google Kubernetes Service or Pivotal Web Services are easy to use for getting started. 
+* A Confluent Cloud API Key and API with permissions to create topics. 
 
 ## Testing
 
@@ -36,12 +31,33 @@ For integration testing a local Zookeeper server and Kafka broker are started.
 * Adjust the configuration in `src/main/resources/application.properties`. 
 * Run `mvn spring-boot:run`
 
+## Running on Kubernetes
+
+See the `kubernetes` subdirectory for installation Kubernetes. This has been tested with Google Kubernetes Service.
+The steps are as follows:
+
+1. Copy `src/main/resources/application-ccloud.yaml` to `src/main/resources/<your-name>.yaml` and adjust the credentials for accessing Confluent Cloud.
+2. build the project: `mvn clean package`
+3. copy the resulting jar to the kubernetes subdirectory: `cp target/kafka-service-broker-1.0-SNAPSHOT.jar kubernetes/`
+4. Edit `kubernetes/Dockerfile` and set the environment variable `SPRING_PROFILES_ACTIVE to <your-name>
+5. build the image: `cd kubernetes`;  `docker build .`
+6. push the image to a container registry that can be accessed by your Kubernetes cluster. If using Google Kubernetes service, you can use the `build.sh` script for this. 
+7. Make sure the namespace `catalog` exists. Deploy the service-broker `kubectl apply -f service-broker.yaml`.
+8. install the service catalog API extension: `install-service-catalog.sh`
+9. create a kubernetes service object for accessing the service broker: `kubectl apply -f service-broker-service.yaml`
+10. Register the service broker with Kubernetes: `kubectl apply -f service-broker-registration.yaml`
+11. Create one or more Confluent Cloud service accounts and associated api keys via the `ccloud` cli. Post these service accounts to the service broker, such that it can supply them to client applications for accessing the topics. See the script `post-accounts.sh` for details. 
+12. Create a topic via the service broker: `kubectl apply -f service-instance.yaml`
+13. Bind the topic: `kubectl apply -f service-binding.yaml`. This will create the kubernetes secret object that can be  referenced from your Confluent Cloud client application. 
+
+
 ## Running on Cloud Foundry
 
-* Adjust manifest-pcf-dev.yaml to your needs and copy to manifest.yml
-* Push to cloud foundry `cf push -f manifest.yml`.
-* register the service broker with cloud foundry `cf create-service-broker kafka-broker <user> <password> http://kafka-service-broker.dev.cfdev.sh`
-* Enable service access: `cf enable-service-access confluent-kafka`
-* Try out creating a topic: `cf create-service confluent-kafka gold my-topic -c '{ "topic_name" : "gold-topic" }'`
-* Bind to an application: `cf bind-service kafka-service-broker my-topic -c '{ "user": "User:bob", "consumer_group" : "consumer_group_1" }'`
+1. Adjust manifest-pcf-dev.yaml to your needs and copy to manifest.yml
+1. Push to cloud foundry `cf push -f manifest.yml`.
+1. register the service broker with cloud foundry `cf create-service-broker kafka-broker <user> <password> http://kafka-service-broker.dev.cfdev.sh`
+1. Enable service access: `cf enable-service-access confluent-kafka`
+1. Create one or more Confluent Cloud service accounts and associated api keys via the `ccloud` cli. Post these service accounts to the service broker, such that it can supply them to client applications for accessing the topics. See the script `post-accounts.sh` for details. 
+1. Try out creating a topic: `cf create-service confluent-kafka gold my-topic -c '{ "topic_name" : "gold-topic" }'`
+1. Bind to an application: `cf bind-service kafka-service-broker my-topic -c '{ "consumer_group" : "consumer_group_1" }'`
 

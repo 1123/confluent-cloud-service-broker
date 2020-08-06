@@ -1,11 +1,10 @@
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceBinding
 metadata:
-  name: topic-binding
-  namespace: cloud-apps
+  name: topic-binding2
+  namespace: catalog
 spec:
   instanceRef:
-    name: topic-provisioned-from-kubernetes
+    name: topic-kubernetes2
   parameters:
-    user: User:bob
     consumer_group: ug1

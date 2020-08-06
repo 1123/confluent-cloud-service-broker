@@ -1,6 +1,13 @@
 package io.confluent.examples.pcf.servicebroker;
 
+import lombok.Data;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -29,6 +36,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -43,16 +52,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(KafkaJunitExtension.class)
 public class ApiIntegrationTest {
 
-    private String serviceUUID;
-    private String servicePlanUUID;
-    private int port;
-    private RestTemplate restTemplate;
-    private String topicName;
-    private String restApiUser;
-    private String restApiPassword;
+    private final String serviceUUID;
+    private final String servicePlanUUID;
+    private final int port;
+    private final RestTemplate restTemplate;
+    private final String topicName;
+    private final String restApiUser;
+    private final String restApiPassword;
 
-    private ConfigurableApplicationContext configurableApplicationContext;
-    private ConfluentPlatformServiceInstanceService confluentPlatformServiceInstanceService;
+    private final ConfigurableApplicationContext configurableApplicationContext;
+    private final ConfluentPlatformServiceInstanceService confluentPlatformServiceInstanceService;
 
     public ApiIntegrationTest(
             @Autowired Catalog catalog,
@@ -78,15 +87,21 @@ public class ApiIntegrationTest {
 
     @Test
     @DirtiesContext
-    void testApi() throws ExecutionException, InterruptedException {
+    void testApi() throws ExecutionException, InterruptedException, IOException {
+        postApiKeys();
         String serviceInstanceId = UUID.randomUUID().toString();
         createInstance(serviceInstanceId);
-        // TODO: we should better wait in the createServiceInstanceBinding method on the server for 5 seconds time.
         Thread.sleep(5000);
         String bindingId = UUID.randomUUID().toString();
-        createBinding(serviceInstanceId, bindingId);
-        testProducing();
-        testConsuming();
+        BindingCredentials bindingCredentials = createBinding(serviceInstanceId, bindingId);
+        String user = bindingCredentials.credentials.get("user");
+        String password = bindingCredentials.credentials.get("password");
+        String topic = bindingCredentials.credentials.get("topic");
+        String consumerGroup = bindingCredentials.credentials.get("consumer_group");
+        // TODO: better use bootstrap_server instead of url
+        String bootstrapServers = bindingCredentials.credentials.get("url");
+        testProducing(bootstrapServers, user, password, topic);
+        testConsuming(bootstrapServers, user, password, consumerGroup, topic);
         removeBinding(serviceInstanceId, bindingId);
         ResponseEntity<String> deleteServiceResponseEntity = deleteService(serviceInstanceId);
         assertTrue(deleteServiceResponseEntity.getStatusCode().is2xxSuccessful());
@@ -115,11 +130,24 @@ public class ApiIntegrationTest {
 
     @Test
     @DirtiesContext
-    void deletingANonExistingTopicShouldNotThrowAnException() throws InterruptedException {
+    void deletingANonExistingTopicShouldNotThrowAnException() {
         confluentPlatformServiceInstanceService.deleteTopic(UUID.randomUUID().toString());
         configurableApplicationContext.close();
     }
 
+    private void postApiKeys() throws IOException {
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+        HttpPost request = new HttpPost(String.format("http://%s:%s@localhost:%d/accounts", restApiUser, restApiPassword, port));
+        // NOTE: when running locally, such as in this integration test, serviceAccount and apiKey must be the same.
+        // in Confluent Cloud they are different things.
+        StringEntity params = new StringEntity(
+                "[{\"apiKey\":\"client\", \"apiSecret\":\"client-secret\", \"serviceAccount\":\"client\"}]");
+        request.addHeader("content-type", "application/json");
+        request.setEntity(params);
+        // Note: the result is not logged if this call fails. Should be improved.
+        CloseableHttpResponse result = httpclient.execute(request);
+        result.close();
+    }
 
     private String authHeader() {
         String auth = restApiUser + ":" + restApiPassword;
@@ -153,9 +181,8 @@ public class ApiIntegrationTest {
         log.info(createResult.toString());
     }
 
-    private void createBinding(String serviceInstanceId, String bindingId) {
+    private BindingCredentials createBinding(String serviceInstanceId, String bindingId) {
         Map<String, Object> params = new HashMap<>();
-        params.put("user", "User:client");
         params.put("consumer_group", "sampleConsumerGroup");
         CreateServiceInstanceBindingRequest createServiceInstanceBindingRequest =
                 CreateServiceInstanceBindingRequest.builder()
@@ -169,27 +196,28 @@ public class ApiIntegrationTest {
                         )
                         .parameters(params)
                         .build();
-        ResponseEntity<String> bindResult = restTemplate.exchange(
+        ResponseEntity<BindingCredentials> bindResult = restTemplate.exchange(
                 url() + serviceInstanceId + "/service_bindings/" + bindingId
                         + "?",
                 HttpMethod.PUT,
                 new HttpEntity<>(createServiceInstanceBindingRequest, headers()),
-                String.class
+                BindingCredentials.class
         );
         log.info(bindResult.toString());
+        return bindResult.getBody();
     }
 
-    private void testProducing() throws ExecutionException, InterruptedException {
-        KafkaProducer<String, String> sampleProducer = sampleProducer();
-        Future<RecordMetadata> result = sampleProducer.send(new ProducerRecord<>(topicName, "key1", "value1"));
+    private void testProducing(String bootstrapServers, String user, String password, String topic) throws ExecutionException, InterruptedException {
+        KafkaProducer<String, String> sampleProducer = sampleProducer(bootstrapServers, user, password);
+        Future<RecordMetadata> result = sampleProducer.send(new ProducerRecord<>(topic, "key1", "value1"));
         RecordMetadata recordMetadata = result.get();
         log.info(recordMetadata.toString());
         sampleProducer.close();
     }
 
-    private void testConsuming() {
-        KafkaConsumer<String, String> sampleConsumer = sampleConsumer();
-        sampleConsumer.subscribe(Collections.singleton(topicName));
+    private void testConsuming(String bootstrapServers, String user, String password, String groupId, String topic) {
+        KafkaConsumer<String, String> sampleConsumer = sampleConsumer(bootstrapServers, user, password, groupId);
+        sampleConsumer.subscribe(Collections.singleton(topic));
         ConsumerRecords<String, String> result = sampleConsumer.poll(Duration.ofSeconds(10));
         assertEquals(1, result.records(new TopicPartition(topicName, 0)).size());
         log.info("Received result: " + result.toString());
@@ -225,33 +253,43 @@ public class ApiIntegrationTest {
         );
     }
 
-    private KafkaConsumer<String, String> sampleConsumer() {
+    private KafkaConsumer<String, String> sampleConsumer(String bootstrapServers, String user, String password, String groupId) {
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", "localhost:10091");
+        properties.setProperty("bootstrap.servers", bootstrapServers);
         properties.put("retry.backoff.ms", "500");
         properties.put("request.timeout.ms", "20000");
         properties.put("sasl.mechanism", "PLAIN");
         properties.put("security.protocol", "SASL_PLAINTEXT");
         properties.put("key.deserializer", StringDeserializer.class);
         properties.put("value.deserializer", StringDeserializer.class);
-        properties.put("group.id", "sampleConsumerGroup");
+        properties.put("group.id", groupId);
         properties.put("auto.offset.reset", "earliest");
-        properties.put("sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"client\" password=\"client-secret\";");
+        properties.put("sasl.jaas.config", String.format(
+                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"%s\" password=\"%s\";", user, password
+        ));
         return new KafkaConsumer<>(properties);
     }
 
-    private KafkaProducer<String, String> sampleProducer() {
+    private KafkaProducer<String, String> sampleProducer(String bootstrapServers, String user, String password) {
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", "localhost:10091");
+        properties.setProperty("bootstrap.servers", bootstrapServers);
         properties.put("retry.backoff.ms", "500");
         properties.put("request.timeout.ms", "20000");
         properties.put("sasl.mechanism", "PLAIN");
         properties.put("security.protocol", "SASL_PLAINTEXT");
         properties.put("key.serializer", StringSerializer.class);
         properties.put("value.serializer", StringSerializer.class);
-        properties.put("sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"client\" password=\"client-secret\";");
+        properties.put("sasl.jaas.config", String.format(
+                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"%s\" password=\"%s\";", user, password
+        ));
         return new KafkaProducer<>(properties);
     }
 
 }
 
+@Data
+class BindingCredentials {
+
+    Map<String, String> credentials;
+
+}

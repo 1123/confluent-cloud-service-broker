@@ -20,6 +20,10 @@ info:
     type: Spring Boot
 
 broker:
+  clientcredentials:
+    serviceAccount: serviceAccount1
+    apiKey: client
+    apiSecret: client-secret
   store:
     topic:
       name: kafka.service.broker.service-instances
