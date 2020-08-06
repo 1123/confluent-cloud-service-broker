@@ -14,7 +14,7 @@ management:
 
 info:
   app:
-    name: Service Broker for Apache Kafka
+    name: Service Broker for Confluent Cloud
     java:
       version: 11
     type: Spring Boot
@@ -47,6 +47,3 @@ logging:
   level:
     root: WARN
     io.confluent.examples.pcf.servicebroker: DEBUG
-
-
-
