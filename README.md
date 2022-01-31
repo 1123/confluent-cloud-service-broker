@@ -39,7 +39,7 @@ The steps are as follows:
 1. Copy `src/main/resources/application-ccloud.yaml` to `src/main/resources/<your-name>.yaml` and adjust the credentials for accessing Confluent Cloud.
 2. build the project: `mvn clean package`
 3. copy the resulting jar to the kubernetes subdirectory: `cp target/kafka-service-broker-1.0-SNAPSHOT.jar kubernetes/`
-4. Edit `kubernetes/Dockerfile` and set the environment variable `SPRING_PROFILES_ACTIVE to <your-name>
+4. Edit `kubernetes/Dockerfile` and set the environment variable `SPRING_PROFILES_ACTIVE to <your-name>`
 5. build the image: `cd kubernetes`;  `docker build .`
 6. push the image to a container registry that can be accessed by your Kubernetes cluster. If using Google Kubernetes service, you can use the `build.sh` script for this. 
 7. Make sure the namespace `catalog` exists. Deploy the service-broker `kubectl apply -f service-broker.yaml`.
